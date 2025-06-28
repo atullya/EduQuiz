@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
 import TeacherDashboard from "./pages/Teacher/TeacherDashboard.jsx";
 import { AuthProvider } from "./contexts/AuthContexts.jsx";
+import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 
 const allRoutes = createBrowserRouter([
   {
@@ -14,8 +15,8 @@ const allRoutes = createBrowserRouter([
     element: <App />,
   },
   {
-    path: "/dashboard",
-    element: <Dashboard />,
+    path: "/adminDashboard",
+    element: <AdminDashboard />,
   },
   {
     path: "/teacherDashboard",

@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-
-  const [email, setEmail] = useState("jane.teacher@example.com");
+  // jane.teacher@example.com
+  const [email, setEmail] = useState("admin@example.com");
   const [password, setPassword] = useState("1234567890");
 
   const handleSubmit = async (e) => {
@@ -18,7 +18,7 @@ const LoginPage = () => {
       if (userData.role === "teacher") {
         navigate("/teacherDashboard");
       } else if (userData.role === "admin") {
-        navigate("/dashboard");
+        navigate("/adminDashboard");
       } else if (userData.role === "student") {
         navigate("/studentDashboard");
       } else {

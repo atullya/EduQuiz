@@ -52,6 +52,19 @@ class ApiService {
     });
   }
 
+  // Admin endpoints
+  getAllStats() {
+    return this.request({
+      url: "/auth/allStats",
+      method: "GET",
+    });
+  }
+  getStudentsDetails() {
+    return this.request({
+      url: "/auth/getStudent",
+      method: "GET",
+    });
+  }
   // Class endpoints
   getClasses() {
     return this.request({
@@ -63,6 +76,13 @@ class ApiService {
   createClass(classData) {
     return this.request({
       url: "/classes/create",
+      method: "POST",
+      data: classData,
+    });
+  }
+  createOnlyClass(classData) {
+    return this.request({
+      url: "/classes/onlyclass",
       method: "POST",
       data: classData,
     });

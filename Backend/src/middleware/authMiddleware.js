@@ -5,7 +5,7 @@ export const authMiddleware = async (req, res, next) => {
   try {
     // Retrieve the JWT from cookies
     const token = req.cookies?.jwt;
-    console.log(token);
+    // console.log(token);
 
     // Check if the token is missing
     if (!token) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,9 @@ import {
   Target,
   Sparkles,
   Download,
+  Wrench,
 } from "lucide-react";
+import { mcqService } from "../../../services/mcqServices";
 
 const MCQmain = () => {
   const [formData, setFormData] = useState({
@@ -41,6 +43,48 @@ const MCQmain = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [generatedMCQs, setGeneratedMCQs] = useState([]);
+  const [isSetupNeeded, setIsSetupNeeded] = useState(false);
+  const [isSettingUp, setIsSettingUp] = useState(false);
+
+  // Check if Python script is working on component mount
+  useEffect(() => {
+    checkPythonScript();
+  }, []);
+
+  const checkPythonScript = async () => {
+    try {
+      const result = await mcqService.testPythonScript();
+      if (!result.success) {
+        setIsSetupNeeded(true);
+        setError(
+          "Python dependencies need to be installed. Click 'Setup Dependencies' button."
+        );
+      }
+    } catch (error) {
+      setIsSetupNeeded(true);
+      setError("Python script not available. Setup required.");
+    }
+  };
+
+  const handleSetup = async () => {
+    setIsSettingUp(true);
+    setError("");
+
+    try {
+      const result = await mcqService.setupPythonDependencies();
+      if (result.success) {
+        setIsSetupNeeded(false);
+        setError("");
+        alert("Setup completed successfully! You can now generate MCQs.");
+      } else {
+        setError(`Setup failed: ${result.message}`);
+      }
+    } catch (error) {
+      setError(`Setup error: ${error.message}`);
+    } finally {
+      setIsSettingUp(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -101,42 +145,24 @@ const MCQmain = () => {
     setError("");
 
     try {
-      // Simulate API call - replace with your actual API endpoint
-      const formDataToSend = new FormData();
-      formDataToSend.append("numberOfQuestions", formData.numberOfQuestions);
-      formDataToSend.append("platform", formData.platform);
+      let response;
 
       if (formData.platform === "text") {
-        formDataToSend.append("textContent", formData.textContent);
+        response = await mcqService.generateFromText(
+          Number.parseInt(formData.numberOfQuestions),
+          formData.textContent
+        );
+        console.log("API response:", response);
       } else {
-        formDataToSend.append("pdfFile", formData.pdfFile);
+        response = await mcqService.generateFromPDF(
+          Number.parseInt(formData.numberOfQuestions),
+          formData.pdfFile
+        );
       }
-
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
-      // Mock generated MCQs
-      const mockMCQs = Array.from(
-        { length: Number.parseInt(formData.numberOfQuestions) },
-        (_, i) => ({
-          id: i + 1,
-          question: `Sample Question ${
-            i + 1
-          }: What is the main concept discussed in the provided content?`,
-          options: [
-            "Option A: First possible answer",
-            "Option B: Second possible answer",
-            "Option C: Third possible answer",
-            "Option D: Fourth possible answer",
-          ],
-          correctAnswer: "A",
-        })
-      );
-
-      setGeneratedMCQs(mockMCQs);
+      setGeneratedMCQs(response || []);
       setSuccess(true);
     } catch (err) {
-      setError("Failed to generate MCQs. Please try again.");
+      setError(err.message || "Failed to generate MCQs. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -167,17 +193,50 @@ const MCQmain = () => {
               <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
                 MCQ Generator
               </h1>
-              <p className="text-lg text-gray-600">
-                AI-Powered Question Generation
-              </p>
+           
             </div>
           </div>
-          {/* <div className="flex items-center justify-center space-x-2">
+          <div className="flex items-center justify-center space-x-2">
             <Sparkles className="w-5 h-5 text-yellow-500" />
-            <p className="text-gray-600">Transform your content into engaging multiple-choice questions</p>
+            <p className="text-gray-600">
+              Transform your content into engaging multiple-choice questions
+            </p>
             <Sparkles className="w-5 h-5 text-yellow-500" />
-          </div> */}
+          </div>
         </div>
+
+        {/* Setup Alert */}
+        {isSetupNeeded && (
+          <Alert className="border-orange-200 bg-orange-50">
+            <Wrench className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <div className="flex items-center justify-between">
+                <span>
+                  Python dependencies need to be installed before generating
+                  MCQs.
+                </span>
+                <Button
+                  onClick={handleSetup}
+                  disabled={isSettingUp}
+                  className="ml-4 bg-orange-600 hover:bg-orange-700 text-white"
+                  size="sm"
+                >
+                  {isSettingUp ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Setting up...
+                    </>
+                  ) : (
+                    <>
+                      <Wrench className="mr-2 h-4 w-4" />
+                      Setup Dependencies
+                    </>
+                  )}
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Main Form Card */}
         <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-2xl">
@@ -199,7 +258,7 @@ const MCQmain = () => {
                 onValueChange={(value) =>
                   handleSelectChange("numberOfQuestions", value)
                 }
-                disabled={isGenerating}
+                disabled={isGenerating || isSetupNeeded}
               >
                 <SelectTrigger className="h-14 text-base border-2 border-gray-200 focus:border-blue-500">
                   <SelectValue placeholder="Select number of questions (1-10)" />
@@ -231,8 +290,10 @@ const MCQmain = () => {
                     formData.platform === "text"
                       ? "ring-2 ring-blue-500 bg-blue-50"
                       : "hover:bg-gray-50"
-                  }`}
-                  onClick={() => handleSelectChange("platform", "text")}
+                  } ${isSetupNeeded ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onClick={() =>
+                    !isSetupNeeded && handleSelectChange("platform", "text")
+                  }
                 >
                   <CardContent className="p-6 text-center">
                     <FileText className="w-12 h-12 mx-auto mb-3 text-blue-600" />
@@ -250,8 +311,10 @@ const MCQmain = () => {
                     formData.platform === "pdf"
                       ? "ring-2 ring-purple-500 bg-purple-50"
                       : "hover:bg-gray-50"
-                  }`}
-                  onClick={() => handleSelectChange("platform", "pdf")}
+                  } ${isSetupNeeded ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onClick={() =>
+                    !isSetupNeeded && handleSelectChange("platform", "pdf")
+                  }
                 >
                   <CardContent className="p-6 text-center">
                     <Upload className="w-12 h-12 mx-auto mb-3 text-purple-600" />
@@ -282,7 +345,7 @@ const MCQmain = () => {
                   value={formData.textContent}
                   onChange={handleInputChange}
                   className="min-h-[200px] text-base border-2 border-gray-200 focus:border-blue-500 resize-none"
-                  disabled={isGenerating}
+                  disabled={isGenerating || isSetupNeeded}
                 />
                 <p className="text-sm text-gray-500">
                   💡 Tip: Provide detailed content for better question
@@ -311,7 +374,7 @@ const MCQmain = () => {
                     accept=".pdf"
                     onChange={handleFileChange}
                     className="mt-4"
-                    disabled={isGenerating}
+                    disabled={isGenerating || isSetupNeeded}
                   />
                   {formData.pdfFile && (
                     <div className="mt-4 p-3 bg-green-50 rounded-lg">
@@ -350,14 +413,14 @@ const MCQmain = () => {
                 variant="outline"
                 onClick={resetForm}
                 className="flex-1 h-14 border-2 border-gray-300 text-gray-700 hover:bg-gray-50"
-                disabled={isGenerating}
+                disabled={isGenerating || isSetupNeeded}
               >
                 Reset Form
               </Button>
               <Button
                 onClick={handleGenerateMCQ}
                 className="flex-1 h-14 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all text-lg"
-                disabled={isGenerating}
+                disabled={isGenerating || isSetupNeeded}
               >
                 {isGenerating ? (
                   <>
@@ -409,24 +472,31 @@ const MCQmain = () => {
                         <Badge className="bg-blue-100 text-blue-800 mt-1">
                           Q{mcq.id}
                         </Badge>
-                        <h3 className="text-lg font-semibold text-gray-900 flex-1">
-                          {mcq.question}
-                        </h3>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            {mcq.question}
+                          </h3>
+                          {mcq.question_type && (
+                            <Badge variant="outline" className="mb-3">
+                              {mcq.question_type}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-12">
-                        {mcq.options.map((option, optIndex) => (
+                        {Object.entries(mcq.options).map(([key, value]) => (
                           <div
-                            key={optIndex}
+                            key={key}
                             className={`p-3 rounded-lg border-2 ${
-                              option.startsWith(`Option ${mcq.correctAnswer}`)
+                              key === mcq.correct_answer
                                 ? "border-green-300 bg-green-50"
                                 : "border-gray-200 bg-gray-50"
                             }`}
                           >
-                            <p className="text-gray-800">{option}</p>
-                            {option.startsWith(
-                              `Option ${mcq.correctAnswer}`
-                            ) && (
+                            <p className="text-gray-800">
+                              <strong>{key}.</strong> {value}
+                            </p>
+                            {key === mcq.correct_answer && (
                               <Badge className="bg-green-100 text-green-800 text-xs mt-1">
                                 Correct Answer
                               </Badge>
@@ -434,6 +504,13 @@ const MCQmain = () => {
                           </div>
                         ))}
                       </div>
+                      {mcq.explanation && (
+                        <div className="ml-12 mt-3 p-3 bg-blue-50 rounded-lg">
+                          <p className="text-sm text-blue-800">
+                            <strong>Explanation:</strong> {mcq.explanation}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

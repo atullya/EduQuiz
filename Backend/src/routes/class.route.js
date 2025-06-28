@@ -28,6 +28,42 @@ classRoutes.get("/", authMiddleware, async (req, res) => {
 
 // CREATE class (admin only)
 // Assuming you're using moment for time parsing
+//only class
+classRoutes.post("/onlyclass", authMiddleware, async (req, res) => {
+  try {
+    const { name, section, grade, subjects, schedule } = req.body;
+
+    // 1. Check if a class with the same name + subjects + schedule exists
+    const existingClass = await Classs.findOne({
+      name,
+      section,
+      grade,
+      subjects: { $all: subjects, $size: subjects.length }, // exact match
+      schedule: { $all: schedule, $size: schedule.length }, // exact match
+    });
+
+    if (existingClass) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "A class with the same name, subjects, and schedule already exists.",
+      });
+    }
+
+    // 2. Create and save the class
+    const newClass = new Classs(req.body);
+    const savedClass = await newClass.save();
+
+    // 3. Return success response
+    return res.status(201).json({ success: true, data: savedClass });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create class. Please try again.",
+    });
+  }
+});
 
 classRoutes.post("/create", authMiddleware, async (req, res) => {
   if (req.user.role !== "admin") {
@@ -207,6 +243,107 @@ classRoutes.put("/:id", authMiddleware, async (req, res) => {
     res.json(populatedClass);
   } catch (err) {
     console.error("Update class error:", err);
+    res.status(400).json({ message: err.message });
+  }
+});
+// PUT /api/classes/:id/edit
+classRoutes.put("/:id/edit", authMiddleware, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Only admin can edit classes" });
+  }
+
+  try {
+    const {
+      name,
+      section,
+      grade,
+      capacity,
+      maxStudents,
+      roomNo,
+      time,
+      schedule,
+      status,
+      teacher,
+      students,
+      subjects,
+    } = req.body;
+
+    // Validate teacher (if provided)
+    if (teacher) {
+      const teacherUser = await User.findOne({ _id: teacher, role: "teacher" });
+      if (!teacherUser) {
+        return res
+          .status(400)
+          .json({ message: "Invalid teacher ID (must be a teacher)" });
+      }
+    }
+
+    // Validate students (if provided)
+    if (students && students.length > 0) {
+      const validStudents = await User.find({
+        _id: { $in: students },
+        role: "student",
+      });
+      if (students.length !== validStudents.length) {
+        return res
+          .status(400)
+          .json({ message: "One or more student IDs are invalid" });
+      }
+    }
+
+    // Optional: check for time conflict for teacher (same logic as before)
+    if (teacher && time && schedule) {
+      const [newStart, newEnd] = time.split("-").map((t) => moment(t, "HH:mm"));
+
+      const teacherClasses = await Classs.find({
+        teacher,
+        _id: { $ne: req.params.id }, // exclude current class
+      });
+
+      const conflict = teacherClasses.some((cls) => {
+        if (!cls.time || !cls.schedule) return false;
+
+        const daysOverlap = cls.schedule.some((day) => schedule.includes(day));
+        if (!daysOverlap) return false;
+
+        const [existingStart, existingEnd] = cls.time
+          .split("-")
+          .map((t) => moment(t, "HH:mm"));
+
+        return newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart);
+      });
+
+      if (conflict) {
+        return res.status(400).json({
+          message:
+            "Time conflict: Teacher is already assigned to a class at this time",
+        });
+      }
+    }
+
+    // Update class
+    const updatedClass = await Classs.findByIdAndUpdate(
+      req.params.id,
+      {
+        name,
+        section,
+        grade,
+        capacity,
+        maxStudents,
+        roomNo,
+        time,
+        schedule,
+        status,
+        teacher,
+        students,
+        subjects,
+      },
+      { new: true }
+    );
+
+    res.status(200).json({ success: true, data: updatedClass });
+  } catch (err) {
+    console.error("Class update error:", err);
     res.status(400).json({ message: err.message });
   }
 });

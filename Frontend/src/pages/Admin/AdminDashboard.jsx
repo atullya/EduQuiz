@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContexts";
-import Layout from "./TeacherComponents/Layout";
+import Layout from "./Layout";
+// import Layout from "./TeacherComponents/Layout";
 
 const TeacherDashboard = () => {
   const { user, checkAuth } = useAuth();
@@ -15,8 +16,7 @@ const TeacherDashboard = () => {
   }, [checkAuth]);
   useEffect(() => {
     if (user) {
-      console.log(user);
-      if(user.role !== "teacher") {
+      if (user.role !== "admin") {
         // Redirect if user is not a teacher
         window.location.href = "/";
       }
@@ -36,7 +36,9 @@ const TeacherDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <Layout>{/* Your dashboard components here */}</Layout>
+      {/* <Layout></Layout> */}
+      <Layout />
+      asdf
     </div>
   );
 };

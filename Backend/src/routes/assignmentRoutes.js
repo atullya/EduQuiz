@@ -25,7 +25,6 @@ assignmentRoutes.post("/create", authMiddleware, async (req, res) => {
         .json({ message: "Invalid class ID (class not found)" });
     }
 
-    // Optional: Verify teacher is the assigned teacher of that class
     if (classData.teacher.toString() !== req.user._id.toString()) {
       return res
         .status(403)
