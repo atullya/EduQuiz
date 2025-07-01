@@ -34,10 +34,10 @@ const ClassesPage = ({ user }) => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">My Classes</h2>
-          <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl shadow-lg">
+          {/* <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl shadow-lg">
             <Plus className="mr-2 h-4 w-4" />
             Add Class
-          </Button>
+          </Button> */}
         </div>
         <div className="grid gap-6">
           {classStatus?.map((classItem) => (

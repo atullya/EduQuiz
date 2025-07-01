@@ -4,10 +4,11 @@ import "./index.css";
 import App from "./App.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Dashboard from "./pages/Dashboard.jsx";
-import StudentDashboard from "./pages/StudentDashboard.jsx";
+
 import TeacherDashboard from "./pages/Teacher/TeacherDashboard.jsx";
 import { AuthProvider } from "./contexts/AuthContexts.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
+import StudenDashboard from "./pages/Student/StudenDashboard.jsx";
 
 const allRoutes = createBrowserRouter([
   {
@@ -24,7 +25,7 @@ const allRoutes = createBrowserRouter([
   },
   {
     path: "/studentDashboard",
-    element: <StudentDashboard />,
+    element: <StudenDashboard />,
   },
 ]);
 createRoot(document.getElementById("root")).render(

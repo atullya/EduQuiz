@@ -9,7 +9,7 @@ import MCQmain from "../MCQPage/MCQmain";
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("analytics");
+  const [activeTab, setActiveTab] = useState("overview");
   const sidebarWidth = 256;
   const { checkAuth, user } = useAuth();
 

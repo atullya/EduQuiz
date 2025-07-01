@@ -13,7 +13,7 @@ import ClassSegment from "./AdminComponent/ClassesComponent/ClassSegment";
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("classes");
+  const [activeTab, setActiveTab] = useState("overview");
   const sidebarWidth = 256;
   const { checkAuth, user } = useAuth();
 
