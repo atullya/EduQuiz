@@ -61,7 +61,7 @@ const AddAssignmentDialogue = ({
     if (user && user.role === "teacher") {
       getAllAssignedClasses();
     }
-  }, [user]);
+  }, [user?._id]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",

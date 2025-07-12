@@ -6,10 +6,11 @@ import OverViewPage from "./StudentComponent/OverViewPage";
 import MainMCQ from "./TakeMCQPage/MainMCQ";
 import MyClasses from "./StudentComponent/MyClasses";
 import StudentProgress from "./StudentComponent/StudentProgress";
+import AssignmentStudent from "./StudentComponent/AssignmentStudent";
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("quiz");
+  const [activeTab, setActiveTab] = useState("assignment");
   const sidebarWidth = 256;
   const { checkAuth, user } = useAuth();
   useEffect(() => {
@@ -43,7 +44,12 @@ const Layout = () => {
               <OverViewPage user={user} />
             </div>
           )}
-          {activeTab === "students" && <div> Schedule content here</div>}
+          {activeTab === "assignment" && (
+            <div>
+              {" "}
+              <AssignmentStudent user={user} />
+            </div>
+          )}
           {activeTab === "teachers" && <div>sdfds</div>}
           {activeTab === "classes" && (
             <div>

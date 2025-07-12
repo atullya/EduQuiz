@@ -30,7 +30,7 @@ import {
 const SideBarItems = ({ activeTab, setActiveTab }) => {
   const sidebarItems = [
     { id: "overview", label: "Overview", icon: Home },
-    { id: "students", label: "Students", icon: GraduationCap },
+    { id: "assignment", label: "Assignment", icon: GraduationCap },
     { id: "teachers", label: "Teachers", icon: Users },
     { id: "classes", label: "Classes", icon: BookOpen },
     { id: "quiz", label: "quiz", icon: FileText },

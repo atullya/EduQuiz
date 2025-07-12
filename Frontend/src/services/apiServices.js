@@ -59,12 +59,14 @@ class ApiService {
       method: "GET",
     });
   }
+
   getStudentsDetails() {
     return this.request({
       url: "/auth/getStudent",
       method: "GET",
     });
   }
+
   // Class endpoints
   getClasses() {
     return this.request({
@@ -80,6 +82,7 @@ class ApiService {
       data: classData,
     });
   }
+
   createOnlyClass(classData) {
     return this.request({
       url: "/classes/onlyclass",
@@ -140,6 +143,7 @@ class ApiService {
       method: "GET",
     });
   }
+
   getAssignedClassesStudent(studentId) {
     return this.request({
       url: `/classes/student-stats/${studentId}`,
@@ -150,6 +154,13 @@ class ApiService {
   async getClassesWithQuizzes(studentId) {
     return this.request({
       url: `/classes/student/classes-with-quizzes/${studentId}`, // Adjust based on your backend route
+      method: "GET",
+    });
+  }
+
+  async getMCQwithClasses(teacherId) {
+    return this.request({
+      url: `classes/teacher/classes-with-mcqs/${teacherId}`,
       method: "GET",
     });
   }
@@ -168,18 +179,52 @@ class ApiService {
       method: "DELETE",
     });
   }
+
   getMyAssignedWithSubmissions() {
     return this.request({
       url: "/assignment/my-assigned-with-submissions",
       method: "GET",
     });
   }
+  // New method for students to get their assignments
+  getStudentAssignments() {
+    return this.request({
+      url: "/assignment/student/my-assignments",
+      method: "GET",
+    });
+  }
+  // New method for students to submit an assignment
+  submitAssignment(assignmentId, submissionText) {
+    return this.request({
+      url: `/assignment/student/submit-assignment/${assignmentId}`,
+      method: "POST",
+      data: { submissionText },
+    });
+  }
+  deleteAssignedAssignment(assignmentID) {
+    return this.request({
+      url: `/assignment/my-assigned/${assignmentID}`,
+      method: "DELETE",
+    });
+  }
+
+  // Debugged updateAssignedAssignment method
+  updateAssignedAssignment(assignmentId, updatedData) {
+    // `updatedData` must be passed as a parameter to the function
+    return this.request({
+      url: `/assignment/my-assigned/${assignmentId}`,
+      data: updatedData, // Pass the `updatedData` object as the `data` property
+      method: "PUT",
+    });
+  }
+
   getMyAssignments() {
     return this.request({
       url: "assignment/my-assigned",
       method: "GET",
     });
   }
+
   // Assignment endpoints
   getAssignments() {
     return this.request({
@@ -187,12 +232,19 @@ class ApiService {
       method: "GET",
     });
   }
-  getAssignmentsForClass(classId) {
+  getAssignmentSubmissions(assignmentId) {
     return this.request({
-      url: `/assignments/class/${classId}`,
+      url: `assignment/${assignmentId}/submissions`,
       method: "GET",
     });
   }
+  // getAssignmentsForClass(classId) {
+  //   return this.request({
+  //     url: `/assignments/class/${classId}`,
+  //     method: "GET",
+  //   });
+  // }
+
   createAssignment(assignmentData) {
     return this.request({
       url: "/assignment/create",

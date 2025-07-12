@@ -10,7 +10,7 @@ import StatsPage from "./StatsPage";
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("analytics");
+  const [activeTab, setActiveTab] = useState("assignments");
   const sidebarWidth = 256;
   const { checkAuth, user } = useAuth();
 
@@ -55,7 +55,7 @@ const Layout = ({ children }) => {
           {/* {activeTab === "settings" && <div> Settings content here</div>} */}
           {activeTab === "reports" && (
             <div>
-               <StatsPage user={user} />
+              <StatsPage user={user} />
             </div>
           )}
         </main>
