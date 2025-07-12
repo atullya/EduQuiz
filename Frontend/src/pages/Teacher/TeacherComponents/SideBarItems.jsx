@@ -17,9 +17,9 @@ const SideBarItems = ({ activeTab, setActiveTab }) => {
     { id: "classes", label: "My Classes", icon: BookOpen },
     { id: "assignments", label: "Assignments", icon: FileText },
     { id: "students", label: "Students", icon: Users },
-    { id: "schedule", label: "Schedule", icon: Calendar },
+    // { id: "schedule", label: "Schedule", icon: Calendar },
     { id: "analytics", label: "MCQ's", icon: BarChart3 },
-    { id: "settings", label: "Settings", icon: Settings },
+    { id: "reports", label: "Reports", icon: Settings },
   ];
 
   return (

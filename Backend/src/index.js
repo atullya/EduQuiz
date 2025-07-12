@@ -10,6 +10,7 @@ import teacherRoutes from "./routes/teacher.route.js";
 import classRoutes from "./routes/class.route.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
 import mcqRoutes from "./routes/mcqRoutes.js";
+import studentMCQRoutes from "./routes/studentQuiz.route.js";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -23,7 +24,10 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "http://192.168.1.5:5173", // Add your IP here
+    ],
     credentials: true,
   })
 );
@@ -44,9 +48,10 @@ app.use("/api/teacher", teacherRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/assignment", assignmentRoutes);
 app.use("/api/mcq", mcqRoutes);
+app.use("/api/smcq", studentMCQRoutes);
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   connectDB();
-  console.log(`Server is running at http://localhost:${PORT}`);
+  console.log(`Server is running at http://0.0.0.0:${PORT}`);
 });

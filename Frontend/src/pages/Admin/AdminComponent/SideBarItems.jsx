@@ -33,9 +33,8 @@ const SideBarItems = ({ activeTab, setActiveTab }) => {
     { id: "students", label: "Students", icon: GraduationCap },
     { id: "teachers", label: "Teachers", icon: Users },
     { id: "classes", label: "Classes", icon: BookOpen },
-    { id: "mcq-generator", label: "MCQ Generator", icon: FileText },
-    { id: "reports", label: "Reports", icon: BarChart3 },
-    { id: "system", label: "System", icon: Database },
+    // { id: "mcq-generator", label: "MCQ Generator", icon: FileText },
+
     { id: "settings", label: "Settings", icon: Settings },
   ];
   return (

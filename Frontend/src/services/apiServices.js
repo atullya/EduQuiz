@@ -140,6 +140,19 @@ class ApiService {
       method: "GET",
     });
   }
+  getAssignedClassesStudent(studentId) {
+    return this.request({
+      url: `/classes/student-stats/${studentId}`,
+      method: "GET",
+    });
+  }
+
+  async getClassesWithQuizzes(studentId) {
+    return this.request({
+      url: `/classes/student/classes-with-quizzes/${studentId}`, // Adjust based on your backend route
+      method: "GET",
+    });
+  }
 
   updateTeacherProfile(id, profileData) {
     return this.request({

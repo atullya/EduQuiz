@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { GraduationCap, X } from "lucide-react";
+import { GraduationCap, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProfileSection from "./ProfileSection";
 import SideBarItems from "./SideBarItems";
 
+import { apiService } from "../../../services/apiServices";
+let handleLogout = async () => {
+  try {
+    const res = await apiService.logout();
+    console.log(res);
+  } catch (error) {
+    console.log(error);
+  }
+};
 const Sidebar = ({
   sidebarOpen,
   setSidebarOpen,
@@ -43,6 +52,16 @@ const Sidebar = ({
         <ProfileSection user={user} />
 
         <SideBarItems activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="p-4 border-t border-gray-200/50">
+      <Button
+        onClick={handleLogout}
+        variant="ghost"
+        className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+      >
+        <LogOut className="mr-3 h-5 w-5" />
+        Logout
+      </Button>
+    </div>
       </div>
     </div>
   </div>

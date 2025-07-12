@@ -6,10 +6,11 @@ import { useAuth } from "../../../contexts/AuthContexts";
 import ClassesPage from "../ClassesPage";
 import AssignmentPage from "../AssignmentPage";
 import MCQmain from "../MCQPage/MCQmain";
+import StatsPage from "./StatsPage";
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("analytics");
   const sidebarWidth = 256;
   const { checkAuth, user } = useAuth();
 
@@ -51,7 +52,12 @@ const Layout = ({ children }) => {
           {activeTab === "students" && <div>👨‍🎓 Students content here</div>}
           {activeTab === "schedule" && <div>📅 Schedule content here</div>}
           {activeTab === "analytics" && <MCQmain user={user} />}
-          {activeTab === "settings" && <div>⚙️ Settings content here</div>}
+          {/* {activeTab === "settings" && <div> Settings content here</div>} */}
+          {activeTab === "reports" && (
+            <div>
+               <StatsPage user={user} />
+            </div>
+          )}
         </main>
       </div>
     </div>

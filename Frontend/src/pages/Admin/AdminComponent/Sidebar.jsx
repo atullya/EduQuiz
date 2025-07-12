@@ -30,6 +30,15 @@ import {
   Database,
 } from "lucide-react";
 import SideBarItems from "./SideBarItems";
+import { apiService } from "../../../services/apiServices";
+let handleLogout = async () => {
+  try {
+    const res = await apiService.logout();
+    console.log(res);
+  } catch (error) {
+    console.log(error);
+  }
+};
 const Sidebar = ({
   sidebarOpen,
   setSidebarOpen,
@@ -189,6 +198,7 @@ const Sidebar = ({
         {/* Logout */}
         <div className="p-4 border-t border-gray-200/50">
           <Button
+            onClick={handleLogout}
             variant="ghost"
             className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
           >

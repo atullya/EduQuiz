@@ -15,22 +15,22 @@ import { useEffect, useState } from "react";
 
 const OverviewPage = ({ user }) => {
   const [classStatus, setClassStatus] = useState("");
+
   const fetchTeacherStats = async () => {
     try {
-      // Assuming user is logged in and is a teacher
       const data = await apiService.getAssignedClasses(user?._id);
-      console.log("Teacher stats:", data);
       setClassStatus(data);
-      // Do something with the data (set to state, render, etc.)
     } catch (err) {
       console.error("Failed to fetch teacher stats", err.message);
     }
   };
+
   useEffect(() => {
-    if (user && user.role === "teacher") {
-      fetchTeacherStats();
+    if (user?.role === "teacher" && user?._id) {
+      fetchTeacherStats(); // ✅ fixed function call
     }
-  }, [user]);
+  }, [user?._id, user?.role]);
+
   return (
     <div className="font-sans antialiased">
       <div className="space-y-8">
@@ -90,7 +90,6 @@ const OverviewPage = ({ user }) => {
                     Total Students
                   </p>
                   <p className="text-3xl font-bold text-green-700 tracking-tight">
-                    {/* {mockClasses.reduce((acc, cls) => acc + cls.students, 0)} */}
                     {classStatus?.totalUniqueStudents || 0}
                   </p>
                   <p className="text-green-500 text-xs mt-1 font-medium">
@@ -113,7 +112,7 @@ const OverviewPage = ({ user }) => {
                     Assignments
                   </p>
                   <p className="text-3xl font-bold text-orange-700 tracking-tight">
-                    {/* {mockAssignments.length} */}8
+                    8
                   </p>
                   <p className="text-orange-500 text-xs mt-1 font-medium">
                     Pending review

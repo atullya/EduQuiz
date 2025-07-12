@@ -15,8 +15,8 @@ const TeacherDashboard = () => {
   }, [checkAuth]);
   useEffect(() => {
     if (user) {
-      console.log(user);
-      if(user.role !== "teacher") {
+      // console.log(user);
+      if (user.role !== "teacher") {
         // Redirect if user is not a teacher
         window.location.href = "/";
       }

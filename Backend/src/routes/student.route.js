@@ -1,7 +1,7 @@
 import express from "express";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import {
-    deleteStudentProfile,
+  deleteStudentProfile,
   studentDashboard,
   updateStudentProfile,
 } from "../controllers/studentController.js";

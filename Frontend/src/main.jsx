@@ -9,6 +9,7 @@ import TeacherDashboard from "./pages/Teacher/TeacherDashboard.jsx";
 import { AuthProvider } from "./contexts/AuthContexts.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import StudenDashboard from "./pages/Student/StudenDashboard.jsx";
+import StartQuiz from "./pages/Student/TakeMCQPage/StartQuiz.jsx";
 
 const allRoutes = createBrowserRouter([
   {
@@ -26,6 +27,10 @@ const allRoutes = createBrowserRouter([
   {
     path: "/studentDashboard",
     element: <StudenDashboard />,
+  },
+  {
+    path: "/quiz",
+    element: <StartQuiz />,
   },
 ]);
 createRoot(document.getElementById("root")).render(
