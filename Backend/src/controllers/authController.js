@@ -29,9 +29,44 @@ export const registerUser = async (req, res) => {
       });
     }
 
+    // ✅ Check for valid class/section BEFORE saving user
+    let targetClass = null;
+    if (role === "student" || role === "teacher") {
+      if (!profile?.class || !profile?.section) {
+        return res.status(400).json({
+          success: false,
+          message: "Class and section must be provided for student/teacher",
+        });
+      }
+
+      targetClass = await Classs.findOne({
+        grade: profile.class,
+        section: profile.section,
+      });
+
+      if (!targetClass) {
+        return res.status(404).json({
+          success: false,
+          message: "No class found with the provided grade and section",
+        });
+      }
+
+      if (role === "teacher") {
+        const alreadyAssigned = await Classs.findOne({
+          teacher: { $exists: true, $ne: null, $eq: targetClass.teacher },
+        });
+        if (alreadyAssigned) {
+          return res.status(400).json({
+            success: false,
+            message: "A teacher is already assigned to this class",
+          });
+        }
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const registerUser = new User({
+    const newUser = new User({
       username,
       email,
       password: hashedPassword,
@@ -39,53 +74,15 @@ export const registerUser = async (req, res) => {
       profile,
     });
 
-    const insertUser = await registerUser.save();
+    const insertUser = await newUser.save();
 
-    // ✅ Handle student class assignment
-    if (insertUser.role === "student" && profile?.class && profile?.section) {
-      const targetClass = await Classs.findOne({
-        grade: profile.class,
-        section: profile.section,
-      });
-
-      if (!targetClass) {
-        return res.status(404).json({
-          success: false,
-          message: "No class found matching the student's grade and section",
-        });
-      }
-
+    // ✅ Add student or teacher to class (since class is already verified)
+    if (role === "student") {
       if (!targetClass.students.includes(insertUser._id)) {
         targetClass.students.push(insertUser._id);
         await targetClass.save();
       }
-    }
-
-    // ✅ Handle teacher assignment (only one class allowed)
-    if (insertUser.role === "teacher" && profile?.class && profile?.section) {
-      const alreadyAssigned = await Classs.findOne({
-        teacher: insertUser._id,
-      });
-
-      if (alreadyAssigned) {
-        return res.status(400).json({
-          success: false,
-          message: "This teacher is already assigned to another class",
-        });
-      }
-
-      const targetClass = await Classs.findOne({
-        grade: profile.class,
-        section: profile.section,
-      });
-
-      if (!targetClass) {
-        return res.status(404).json({
-          success: false,
-          message: "No class found for the teacher's grade and section",
-        });
-      }
-
+    } else if (role === "teacher") {
       targetClass.teacher = insertUser._id;
       await targetClass.save();
     }
@@ -164,6 +161,155 @@ export const getStudent = async (req, res) => {
   } catch (error) {
     console.error("Error in getStudent:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+export const getTeacher = async (req, res) => {
+  try {
+    const students = await User.find({ role: "teacher" }).select("-password");
+    res.status(200).json(students);
+  } catch (error) {
+    console.error("Error in teacher:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// ==============================
+// Edit User (student or teacher)
+// ==============================
+export const editUserProfile = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { username, email, password, profile } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Handle class/section updates
+    if (
+      (user.role === "student" || user.role === "teacher") &&
+      profile?.class &&
+      profile?.section
+    ) {
+      const newClass = await Classs.findOne({
+        grade: profile.class,
+        section: profile.section,
+      });
+
+      if (!newClass) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Target class not found" });
+      }
+
+      // Remove from previous class
+      const prevClass = await Classs.findOne({
+        $or: [{ students: user._id }, { teacher: user._id }],
+      });
+
+      if (user.role === "student") {
+        if (prevClass) {
+          prevClass.students = prevClass.students.filter(
+            (id) => id.toString() !== user._id.toString()
+          );
+          await prevClass.save();
+        }
+
+        if (!newClass.students.includes(user._id)) {
+          newClass.students.push(user._id);
+          await newClass.save();
+        }
+      } else if (user.role === "teacher") {
+        if (prevClass) {
+          prevClass.teacher = null;
+          await prevClass.save();
+        }
+
+        if (
+          !newClass.teacher ||
+          newClass.teacher.toString() === user._id.toString()
+        ) {
+          newClass.teacher = user._id;
+          await newClass.save();
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: "Another teacher already assigned to this class",
+          });
+        }
+      }
+
+      user.profile.class = profile.class;
+      user.profile.section = profile.section;
+    }
+
+    // Update basic fields
+    user.username = username || user.username;
+    user.email = email || user.email;
+    if (password) {
+      user.password = await bcrypt.hash(password, 10);
+    }
+
+    // Update profile fields
+    if (profile) {
+      user.profile.firstName = profile.firstName || user.profile.firstName;
+      user.profile.lastName = profile.lastName || user.profile.lastName;
+      user.profile.phone = profile.phone || user.profile.phone;
+      user.profile.address = profile.address || user.profile.address;
+      user.profile.dateOfBirth =
+        profile.dateOfBirth || user.profile.dateOfBirth;
+
+      user.profile.subjects = profile.subjects || user.profile.subjects;
+      user.profile.qualification =
+        profile.qualification || user.profile.qualification;
+      user.profile.studentId = profile.studentId || user.profile.studentId;
+      user.profile.teacherId = profile.teacherId || user.profile.teacherId;
+    }
+
+    await user.save();
+    // console.log(user);
+    res
+      .status(200)
+      .json({ success: true, message: "User updated successfully", user });
+  } catch (error) {
+    console.error("Error in editUserProfile:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// ==============================
+// Delete User (student or teacher)
+// ==============================
+export const deleteUserProfile = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Also remove user from Classs collection
+    if (user.role === "student") {
+      await Classs.updateMany(
+        { students: userId },
+        { $pull: { students: userId } }
+      );
+    } else if (user.role === "teacher") {
+      await Classs.updateMany({ teacher: userId }, { $set: { teacher: null } });
+    }
+
+    res
+      .status(200)
+      .json({ success: true, message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error in deleteUserProfile:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 

@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from "react";
-// import Sidebar from "./Sidebar";
-// import Topbar from "./TopBar";
-// import OverviewPage from "../OverviewPage";
+"use client";
+
+import { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContexts";
-import Header from "./AdminComponent/Topbar";
 import Topbar from "./AdminComponent/Topbar";
-import Sidebar from "./AdminComponent/SideBar";
+// import Sidebar from "./AdminComponent/SideBar"
+import Sidebar from "./AdminComponent/Sidebar";
 import AdminOverview from "./AdminComponent/AdminOverview";
 import StudentSegment from "./AdminComponent/StudentSegment";
 import TeacherSegment from "./AdminComponent/TeacherSegment";
@@ -13,27 +12,15 @@ import ClassSegment from "./AdminComponent/ClassesComponent/ClassSegment";
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
-  const sidebarWidth = 256;
+  const [activeTab, setActiveTab] = useState("teachers");
   const { checkAuth, user } = useAuth();
 
   useEffect(() => {
     checkAuth();
   }, []);
 
-  useEffect(() => {
-    // console.log("User data in ProfileSection:", user);
-  }, [user]);
-
   return (
-    <div className="min-h-screen relative">
-      {/* <Sidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        user={user}
-      /> */}
+    <div className="min-h-screen bg-gray-50">
       <Sidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
@@ -43,23 +30,27 @@ const Layout = ({ children }) => {
       />
 
       <div
-        className="flex flex-col transition-all duration-300"
-        style={{
-          marginLeft: sidebarOpen ? sidebarWidth : 0,
-          minHeight: "100vh",
-        }}
+        className={`transition-all duration-300 ${
+          sidebarOpen ? "lg:ml-64" : ""
+        }`}
       >
         <Topbar />
-        <main className="p-6 flex-1 overflow-auto">
+        <main className="p-6">
           {/* Render content based on active tab */}
           {activeTab === "overview" && <AdminOverview user={user} />}
           {activeTab === "students" && <StudentSegment user={user} />}
           {activeTab === "teachers" && <TeacherSegment user={user} />}
           {activeTab === "classes" && <ClassSegment user={user} />}
-          {activeTab === "mcq-generator" && <div>📅 Schedule content here</div>}
-          {activeTab === "reports" && <div>📅 Schedule content here</div>}
-          {activeTab === "system" && <div>⚙️ Settings content here</div>}
-          {activeTab === "settings" && <div>⚙️ Settings content here</div>}
+          {activeTab === "settings" && (
+            <div className="text-center py-12">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                Settings
+              </h2>
+              <p className="text-gray-600">
+                Settings content will be displayed here
+              </p>
+            </div>
+          )}
         </main>
       </div>
     </div>

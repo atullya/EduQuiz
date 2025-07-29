@@ -1,47 +1,18 @@
-import React, { useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  BookOpen,
-  Users,
-  GraduationCap,
-  Settings,
-  LogOut,
-  Edit,
-  MapPin,
-  School,
-  UserCheck,
-  BarChart3,
-  TrendingUp,
-  Activity,
-  Plus,
-  Search,
-  Menu,
-  X,
-  Bell,
-  Home,
-  FileText,
-  ChevronRight,
-  Sparkles,
-  Target,
-  Shield,
-  Database,
-} from "lucide-react";
-import { apiService } from "../../../services/apiServices";
-const AdminOverview = ({ user }) => {
- 
+"use client"
+
+import { useEffect, useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { BookOpen, Users, GraduationCap, BarChart3, Activity, Plus } from "lucide-react"
+import { apiService } from "../../../services/apiServices"
+
+const AdminOverview = ({ user, setActiveTab }) => {
+  const [count, setCount] = useState({
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalClasses: 0,
+  })
+
   const mockRecentActivities = [
     {
       id: 1,
@@ -71,147 +42,92 @@ const AdminOverview = ({ user }) => {
       time: "8 hours ago",
       type: "grade",
     },
-  ];
-  const [count, setCount] = React.useState(0);
+  ]
+
   const getAllStats = async () => {
     try {
-      const response = await apiService.getAllStats();
-      setCount(response);
-    //   console.log("Stats fetched successfully:", response);
+      const response = await apiService.getAllStats()
+      setCount(response)
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      console.error("Error fetching stats:", error)
     }
-  };
+  }
+
   useEffect(() => {
     if (user && user.role === "admin") {
-      getAllStats();
+      getAllStats()
     }
-  }, []);
+  }, [user])
+
   return (
-    <div className="space-y-8">
-      {" "}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-500 to-pink-600 to-yellow-600 p-8 text-white">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2 tracking-tight">
-                Welcome back, {user?.username}! 👑
-              </h1>
-              <p className="text-orange-100 text-lg font-medium">
-                Manage your school with confidence
-              </p>
-            </div>
-            <div className="hidden md:block">
-              <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <Shield className="w-16 h-16 text-white" />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full"></div>
-        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full"></div>
+    <div className="max-w-8xl mx-auto p-6">
+      {/* Simple Header */}
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white mb-6">
+        <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.username}! 👑</h1>
+        <p className="text-blue-100">Manage your school with confidence</p>
       </div>
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-xl transition-all duration-300 group">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-600 text-sm font-semibold tracking-wide">
-                  Total Students
-                </p>
-                <p className="text-3xl font-bold text-blue-700 tracking-tight">
-                  {count.totalStudents}
-                </p>
-                <p className="text-blue-500 text-xs mt-1 font-medium">
-                  Enrolled this year
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <GraduationCap className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            <div className="absolute -bottom-2 -right-2 w-16 h-16 bg-blue-200/50 rounded-full"></div>
+
+      {/* Simple Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <GraduationCap className="w-8 h-8 text-blue-500 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold mb-1">Total Students</h3>
+            <p className="text-2xl font-bold text-gray-900">{count.totalStudents || 0}</p>
+            <p className="text-sm text-gray-500">Enrolled this year</p>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-green-50 to-green-100 hover:shadow-xl transition-all duration-300 group">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-600 text-sm font-semibold tracking-wide">
-                  Total Teachers
-                </p>
-                <p className="text-3xl font-bold text-green-700 tracking-tight">
-                  {count.totalTeachers}
-                </p>
-                <p className="text-green-500 text-xs mt-1 font-medium">
-                  Active faculty
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            <div className="absolute -bottom-2 -right-2 w-16 h-16 bg-green-200/50 rounded-full"></div>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <Users className="w-8 h-8 text-green-500 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold mb-1">Total Teachers</h3>
+            <p className="text-2xl font-bold text-gray-900">{count.totalTeachers || 0}</p>
+            <p className="text-sm text-gray-500">Active faculty</p>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-xl transition-all duration-300 group">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-600 text-sm font-semibold tracking-wide">
-                  Total Classes
-                </p>
-                <p className="text-3xl font-bold text-purple-700 tracking-tight">
-                  {count.totalClasses}
-                </p>
-                <p className="text-purple-500 text-xs mt-1 font-medium">
-                  Active classes
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <BookOpen className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            <div className="absolute -bottom-2 -right-2 w-16 h-16 bg-purple-200/50 rounded-full"></div>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <BookOpen className="w-8 h-8 text-purple-500 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold mb-1">Total Classes</h3>
+            <p className="text-2xl font-bold text-gray-900">{count.totalClasses || 0}</p>
+            <p className="text-sm text-gray-500">Active classes</p>
           </CardContent>
         </Card>
       </div>
-      <Card className="border-0 bg-white/70 backdrop-blur-sm shadow-xl">
+
+      {/* Simple Action Buttons */}
+      <Card className="mb-8">
         <CardHeader>
-          <CardTitle className="flex items-center text-xl font-bold tracking-tight">
-            <Activity className="mr-3 h-6 w-6 text-indigo-600" />
-            Quick Actions
-          </CardTitle>
+          <CardTitle className="text-xl font-bold">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Button className="h-16 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-semibold">
-              <Plus className="mr-2 h-5 w-5" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Button className="h-12 text-lg bg-blue-600 hover:bg-blue-700" onClick={() => setActiveTab("students")}>
+              <Plus className="w-5 h-5 mr-2" />
               Add Student
             </Button>
-            <Button className="h-16 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-semibold">
-              <Users className="mr-2 h-5 w-5" />
+            <Button className="h-12 text-lg bg-green-600 hover:bg-green-700" onClick={() => setActiveTab("teachers")}>
+              <Users className="w-5 h-5 mr-2" />
               Add Teacher
             </Button>
-            <Button className="h-16 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-semibold">
-              <BookOpen className="mr-2 h-5 w-5" />
+            <Button className="h-12 text-lg bg-purple-600 hover:bg-purple-700" onClick={() => setActiveTab("classes")}>
+              <BookOpen className="w-5 h-5 mr-2" />
               Create Class
             </Button>
-            <Button className="h-16 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-semibold">
-              <BarChart3 className="mr-2 h-5 w-5" />
+            <Button variant="outline" className="h-12 text-lg bg-transparent">
+              <BarChart3 className="w-5 h-5 mr-2" />
               View Reports
             </Button>
           </div>
         </CardContent>
       </Card>
+
       {/* Recent Activities */}
-      <Card className="border-0 bg-white/70 backdrop-blur-sm shadow-xl">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center text-xl font-bold tracking-tight">
+          <CardTitle className="text-xl font-bold flex items-center">
             <Activity className="mr-3 h-6 w-6 text-green-600" />
             Recent Activities
           </CardTitle>
@@ -228,10 +144,10 @@ const AdminOverview = ({ user }) => {
                     activity.type === "enrollment"
                       ? "bg-blue-500"
                       : activity.type === "schedule"
-                      ? "bg-green-500"
-                      : activity.type === "assignment"
-                      ? "bg-purple-500"
-                      : "bg-orange-500"
+                        ? "bg-green-500"
+                        : activity.type === "assignment"
+                          ? "bg-purple-500"
+                          : "bg-orange-500"
                   }`}
                 ></div>
                 <div className="flex-1">
@@ -245,7 +161,8 @@ const AdminOverview = ({ user }) => {
         </CardContent>
       </Card>
     </div>
-  );
-};
+  )
+}
 
-export default AdminOverview;
+export default AdminOverview
+ 

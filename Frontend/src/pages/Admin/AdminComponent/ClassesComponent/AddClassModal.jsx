@@ -23,15 +23,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus,
   School,
-  Users,
-  BookOpen,
   MapPin,
-  Calendar,
   CheckCircle,
   AlertCircle,
   Loader2,
 } from "lucide-react";
 import { apiService } from "../../../../services/apiServices";
+
 const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -51,11 +49,13 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
   const availableSubjects = [
     "Science",
     "English",
-
     "Physics",
     "Chemistry",
-
     "Computer Science",
+    "Mathematics",
+    "Biology",
+    "History",
+    "Geography",
   ];
   const weekDays = [
     "Monday",
@@ -101,8 +101,9 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
     if (!formData.name.trim()) return setError("Class name is required"), false;
     if (!formData.section) return setError("Section is required"), false;
     if (!formData.grade) return setError("Grade is required"), false;
-    if (formData.subjects.length === 0)
-      return setError("At least one subject is required"), false;
+    if (formData.subjects.length !== 1)
+      return setError("Exactly one subject must be selected"), false;
+
     if (!formData.roomNo.trim())
       return setError("Room number is required"), false;
     if (formData.schedule.length === 0)
@@ -135,25 +136,17 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
 
     setIsSubmitting(true);
     setError("");
-
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Here you would make the actual API call to create class
-      // const res = await apiService.createClass(formData);
       const res = await apiService.createOnlyClass(formData);
       console.log(res);
-
-     
 
       if (!res || !res.success) {
         throw new Error(res.message || "Failed to create class");
       }
 
       console.log("Class created successfully:", res.data);
-      console.log("Class data:", formData);
-
       setSuccess(true);
       setTimeout(() => {
         resetForm();
@@ -171,42 +164,35 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-3xl !max-w-3xl !w-full max-h-[95vh] overflow-y-auto bg-gradient-to-br from-blue-50 to-purple-50">
-        <DialogHeader className="pb-6">
-          <DialogTitle className="flex items-center gap-3 text-2xl font-bold text-gray-900">
-            <div className="p-2 bg-gradient-to-r from-green-500 to-blue-600 rounded-lg">
-              <School className="h-6 w-6 text-white" />
-            </div>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="text-center pb-4">
+          <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center justify-center gap-2">
+            <School className="h-5 w-5 text-blue-600" />
             Create New Class
           </DialogTitle>
-          <DialogDescription className="text-gray-600 text-base">
-            Set up a new class with subjects, schedule, and room assignment.
+          <DialogDescription className="text-gray-600">
+            Set up a new class with subjects, schedule, and room assignment
           </DialogDescription>
         </DialogHeader>
 
         {success && (
-          <Alert className="border-green-200 bg-green-50 mb-6">
+          <Alert className="border-green-200 bg-green-50 mb-4">
             <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800 font-medium">
+            <AlertDescription className="text-green-800">
               Class created successfully!
             </AlertDescription>
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Basic Information Section */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Users className="h-5 w-5 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Basic Information
-              </h3>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+              Basic Information
+            </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
                 <Label className="text-sm font-medium text-gray-700">
                   Class Name *
                 </Label>
@@ -214,13 +200,13 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="e.g., Grade 10"
+                  placeholder="e.g., Grade 10 Science"
                   disabled={isSubmitting}
-                  className="rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                  className="mt-1"
                 />
               </div>
 
-              <div className="space-y-2">
+              <div>
                 <Label className="text-sm font-medium text-gray-700">
                   Section *
                 </Label>
@@ -229,7 +215,7 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
                   onValueChange={(v) => handleSelectChange("section", v)}
                   disabled={isSubmitting}
                 >
-                  <SelectTrigger className="rounded-lg w-full border-gray-300 focus:border-green-500 focus:ring-green-500">
+                  <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select section" />
                   </SelectTrigger>
                   <SelectContent>
@@ -242,7 +228,7 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div>
                 <Label className="text-sm font-medium text-gray-700">
                   Grade *
                 </Label>
@@ -251,7 +237,7 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
                   onValueChange={(v) => handleSelectChange("grade", v)}
                   disabled={isSubmitting}
                 >
-                  <SelectTrigger className="rounded-lg w-full border-gray-300 focus:border-green-500 focus:ring-green-500">
+                  <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select grade" />
                   </SelectTrigger>
                   <SelectContent>
@@ -264,11 +250,11 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div>
                 <Label className="text-sm font-medium text-gray-700">
                   Room Number *
                 </Label>
-                <div className="relative">
+                <div className="relative mt-1">
                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     name="roomNo"
@@ -276,68 +262,45 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
                     onChange={handleInputChange}
                     placeholder="e.g., 202, 101A"
                     disabled={isSubmitting}
-                    className="pl-10 rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                    className="pl-10"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Subjects Section */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <BookOpen className="h-5 w-5 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Subjects *
-              </h3>
-            </div>
+          {/* Subjects */}
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {availableSubjects.map((subject) => (
-                <div key={subject} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`subject-${subject}`}
-                    checked={formData.subjects.includes(subject)}
-                    onCheckedChange={(checked) =>
-                      handleSubjectChange(subject, checked)
-                    }
-                    disabled={isSubmitting}
-                    className="rounded border-gray-300"
-                  />
-                  <Label
-                    htmlFor={`subject-${subject}`}
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
-                  >
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+              Subject *
+            </h3>
+            <Select
+              value={formData.subjects[0] || ""}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, subjects: [value] }))
+              }
+              disabled={isSubmitting}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select subject" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableSubjects.map((subject) => (
+                  <SelectItem key={subject} value={subject}>
                     {subject}
-                  </Label>
-                </div>
-              ))}
-            </div>
-
-            {formData.subjects.length > 0 && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Selected subjects:</strong>{" "}
-                  {formData.subjects.join(", ")}
-                </p>
-              </div>
-            )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Schedule Section */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Calendar className="h-5 w-5 text-purple-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Schedule *
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Schedule */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+              Schedule *
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {weekDays.map((day) => (
                 <div key={day} className="flex items-center space-x-2">
                   <Checkbox
@@ -347,20 +310,18 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
                       handleScheduleChange(day, checked)
                     }
                     disabled={isSubmitting}
-                    className="rounded border-gray-300"
                   />
                   <Label
                     htmlFor={`day-${day}`}
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                    className="text-sm text-gray-700 cursor-pointer"
                   >
                     {day}
                   </Label>
                 </div>
               ))}
             </div>
-
             {formData.schedule.length > 0 && (
-              <div className="mt-4 p-3 bg-purple-50 rounded-lg">
+              <div className="p-3 bg-purple-50 rounded-lg">
                 <p className="text-sm text-purple-800">
                   <strong>Selected days:</strong> {formData.schedule.join(", ")}
                 </p>
@@ -369,15 +330,13 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
           </div>
 
           {error && (
-            <Alert variant="destructive" className="bg-red-50 border-red-200">
+            <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-red-800 font-medium">
-                {error}
-              </AlertDescription>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
               type="button"
               variant="outline"
@@ -386,14 +345,13 @@ const AddClassModal = ({ open, onOpenChange, onClassAdded }) => {
                 onOpenChange(false);
               }}
               disabled={isSubmitting}
-              className="px-6 py-2 rounded-lg border-gray-300 hover:bg-gray-50"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="px-8 py-2 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white rounded-lg shadow-lg font-medium"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {isSubmitting ? (
                 <>

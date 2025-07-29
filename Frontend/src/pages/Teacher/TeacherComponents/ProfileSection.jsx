@@ -1,21 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EditProfileDialog from "./EditProfileDialog";
-import { useAuth } from "../../../contexts/AuthContexts";
 
 const ProfileSection = ({ user }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
-  //   const { checkAuth, user } = useAuth();
-
-  //   useEffect(() => {
-  //     checkAuth();
-  //   }, []);
-
-  //   useEffect(() => {
-  //     console.log("User data in ProfileSection:", user);
-  //   }, [user]);
 
   return (
     <div className="p-6 border-b border-gray-200/50">
@@ -40,9 +29,13 @@ const ProfileSection = ({ user }) => {
           <Edit className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* ✅ Pass correct props */}
       <EditProfileDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
+        teacherId={user?._id}
+        existingData={user}
       />
     </div>
   );

@@ -12,18 +12,23 @@ from collections import Counter
 from difflib import SequenceMatcher
 
 # Download once (safe to call multiple times)
-nltk.download("punkt")
-nltk.download("stopwords")
-nltk.download("wordnet")
-nltk.download("averaged_perceptron_tagger")
-nltk.download("maxent_ne_chunker")
-nltk.download("words")
+# nltk.download("punkt")
+# nltk.download("stopwords")
+# nltk.download("wordnet")
+# nltk.download("averaged_perceptron_tagger")
+# nltk.download("maxent_ne_chunker")
+# nltk.download("words")
 
 stop_words = set(stopwords.words("english"))
 lemmatizer = WordNetLemmatizer()
 
-tokenizer = T5Tokenizer.from_pretrained("valhalla/t5-base-qg-hl")
-model = T5ForConditionalGeneration.from_pretrained("valhalla/t5-base-qg-hl")
+
+# ✅ Only use local model cache
+tokenizer = T5Tokenizer.from_pretrained("valhalla/t5-base-qg-hl", local_files_only=True)
+model = T5ForConditionalGeneration.from_pretrained("valhalla/t5-base-qg-hl", local_files_only=True)
+
+# tokenizer = T5Tokenizer.from_pretrained("valhalla/t5-base-qg-hl")
+# model = T5ForConditionalGeneration.from_pretrained("valhalla/t5-base-qg-hl")
 
 
 def read_pdf_text(file_path):

@@ -10,7 +10,7 @@ import StatsPage from "./StatsPage";
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("assignments");
+  const [activeTab, setActiveTab] = useState("analytics");
   const sidebarWidth = 256;
   const { checkAuth, user } = useAuth();
 
@@ -46,10 +46,13 @@ const Layout = ({ children }) => {
         />
         <main className="p-6 flex-1 overflow-auto">
           {/* Render content based on active tab */}
-          {activeTab === "overview" && <OverviewPage user={user} />}
+          {activeTab === "overview" && (
+            <OverviewPage user={user} setActiveTab={setActiveTab} />
+          )}
+
           {activeTab === "classes" && <ClassesPage user={user} />}
           {activeTab === "assignments" && <AssignmentPage user={user} />}
-          {activeTab === "students" && <div>👨‍🎓 Students content here</div>}
+          {/* {activeTab === "students" && <div>👨‍🎓 Students content here</div>} */}
           {activeTab === "schedule" && <div>📅 Schedule content here</div>}
           {activeTab === "analytics" && <MCQmain user={user} />}
           {/* {activeTab === "settings" && <div> Settings content here</div>} */}

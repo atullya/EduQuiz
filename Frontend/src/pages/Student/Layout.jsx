@@ -10,7 +10,7 @@ import AssignmentStudent from "./StudentComponent/AssignmentStudent";
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("assignment");
+  const [activeTab, setActiveTab] = useState("quiz");
   const sidebarWidth = 256;
   const { checkAuth, user } = useAuth();
   useEffect(() => {

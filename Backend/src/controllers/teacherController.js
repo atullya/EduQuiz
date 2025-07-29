@@ -7,17 +7,38 @@ export const teacherDashboard = (req, res) => {
 
 export const updateTeacherProfile = async (req, res) => {
   try {
-    const { id } = req.params;
-    // Logic to update teacher profile based on the provided ID
-    const teacher = await User.findByIdAndUpdate(id, req.body, {
-      new: true,
-    });
-    res.json(teacher);
+    const teacherId = req.user?.id; // Or use req.params.id if it's in the URL
+
+    if (!teacherId) {
+      return res.status(400).json({ error: "Teacher ID not provided." });
+    }
+
+    const updatedTeacher = await User.findByIdAndUpdate(
+      teacherId,
+      {
+        $set: {
+          email: req.body.email,
+          profile: {
+            firstName: req.body.profile.firstName,
+            lastName: req.body.profile.lastName,
+            phone: req.body.profile.phone,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedTeacher) {
+      return res.status(404).json({ error: "Teacher not found" });
+    }
+
+    res.status(200).json({ message: "Profile updated", updatedTeacher });
   } catch (error) {
     console.error("Error in updateTeacherProfile:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ error: "Something went wrong" });
   }
 };
+
 export const deleteTeacherProfile = async (req, res) => {
   try {
     const { id } = req.params;

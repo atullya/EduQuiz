@@ -1,107 +1,96 @@
-// Directory structure suggestion:
-// components/
-//   ClassCard.jsx
-//   ProgressDialog.jsx
-//   DeleteConfirmationDialog.jsx
-// pages/
-//   StatsPage.jsx (this will be the new main file)
+"use client"
+import { BookOpen, FileText, CheckCircle, XCircle, Trash2, Eye, List } from "lucide-react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
-// --- File: components/ClassCard.jsx ---
-"use client";
-
-import {
-  BookOpen,
-  CheckCircle,
-  FileText,
-  GraduationCap,
-  Trash2,
-  XCircle,
-  ChevronRight,
-} from "lucide-react";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-
-export default function ClassCard({
-  classItem,
-  handleDeleteClick,
-  handleViewQuizzes,
-  isDeleting,
-}) {
+export default function ClassCard({ classItem, handleDeleteClick, handleViewQuizzes, handleViewMCQs, isDeleting }) {
   return (
-    <Card
-      key={classItem.classId}
-      className="relative border border-gray-100 bg-white rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 flex flex-col overflow-hidden"
-    >
-      <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-blue-500 to-purple-900 rounded-t-3xl opacity-80"></div>
-      <CardContent className="p-6 flex-grow flex flex-col z-10">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg -mt-10 border-4 border-white">
-              <BookOpen className="w-10 h-10 text-purple-700" />
-            </div>
-            <div className="flex-grow pt-2">
-              <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                {classItem.className}
-              </h3>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className="bg-blue-100 text-blue-800 text-sm">
-                  Section {classItem.section}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="border-purple-300 text-purple-700 text-sm"
-                >
-                  Grade {classItem.grade}
-                </Badge>
-                {classItem.subject && (
-                  <Badge className="bg-yellow-100 text-yellow-800 text-sm">
-                    {classItem.subject}
-                  </Badge>
-                )}
-              </div>
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader className="pb-4">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <BookOpen className="w-6 h-6 text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">{classItem.className}</h3>
+            <div className="flex flex-wrap gap-2 text-sm">
+              <span className="text-gray-600">Grade {classItem.grade}</span>
+              <span className="text-gray-400">•</span>
+              <span className="text-gray-600">Section {classItem.section}</span>
+              {classItem.subject && (
+                <>
+                  <span className="text-gray-400">•</span>
+                  <span className="text-blue-600 font-medium">{classItem.subject}</span>
+                </>
+              )}
             </div>
           </div>
         </div>
-        <div className="mb-4 mt-2">
-          <Badge className="bg-purple-600 text-white flex items-center gap-2 px-4 py-2 text-base font-semibold rounded-full shadow-md">
-            <FileText className="w-4 h-4" />
-            Total Quizzes: {classItem.quizCount}
-          </Badge>
-          <div className="flex flex-wrap gap-2 mt-3">
-            {classItem.statusBreakdown.published > 0 && (
-              <Badge className="bg-green-100 text-green-800 flex items-center gap-1 px-2.5 py-0.5 rounded-full">
-                <CheckCircle className="w-3 h-3" />
-                Published: {classItem.statusBreakdown.published}
-              </Badge>
-            )}
-            {classItem.statusBreakdown.draft > 0 && (
-              <Badge className="bg-gray-200 text-gray-600 flex items-center gap-1 px-2.5 py-0.5 rounded-full">
-                <XCircle className="w-3 h-3" />
-                Draft: {classItem.statusBreakdown.draft}
-              </Badge>
-            )}
+      </CardHeader>
+
+      <CardContent className="pt-0 space-y-4">
+        {/* Quiz Stats */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-900">
+              Total MCQs: {classItem.mcqCount || classItem.quizCount || 0}
+            </span>
           </div>
+
+          {/* Status Breakdown */}
+          {classItem.statusBreakdown && (
+            <div className="flex gap-3">
+              {classItem.statusBreakdown.published > 0 && (
+                <div className="flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <span className="text-sm text-gray-600">{classItem.statusBreakdown.published} Published</span>
+                </div>
+              )}
+              {classItem.statusBreakdown.draft > 0 && (
+                <div className="flex items-center gap-1">
+                  <XCircle className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">{classItem.statusBreakdown.draft} Draft</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        <div className="mt-auto pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-end gap-3">
+
+        {/* Action Buttons */}
+        <div className="space-y-2 pt-2 border-t border-gray-100">
           <Button
-            onClick={() => handleDeleteClick(classItem)}
-            variant="destructive"
-            className="w-full sm:w-auto"
-            disabled={isDeleting}
-          >
-            <Trash2 className="mr-2 h-4 w-4" /> Delete Quizzes
-          </Button>
-          <Button
+            variant="outline"
+            size="sm"
             onClick={() => handleViewQuizzes(classItem)}
-            className="w-full sm:w-auto"
+            className="w-full text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 hover:bg-blue-50"
           >
-            View Progress <ChevronRight className="ml-2 h-4 w-4" />
+            <Eye className="mr-2 h-4 w-4" />
+            View Progress
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleViewMCQs(classItem)}
+            className="w-full text-green-600 hover:text-green-700 border-green-200 hover:border-green-300 hover:bg-green-50"
+          >
+            <List className="mr-2 h-4 w-4" />
+            View MCQs
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDeleteClick(classItem)}
+            disabled={isDeleting}
+            className="w-full text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            {isDeleting ? "Deleting..." : "Delete"}
           </Button>
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }
-
-// The other two components ProgressDialog.jsx and DeleteConfirmationDialog.jsx are also needed. Shall I continue with those next?

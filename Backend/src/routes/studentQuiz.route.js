@@ -3,6 +3,7 @@ import MCQ from "../models/MCQ.js";
 import QuizAttempt from "../models/QuizAttempt.js";
 import User from "../models/user.model.js";
 import mongoose from "mongoose";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 /**
@@ -98,20 +99,30 @@ const router = express.Router();
 
 router.get("/student/quizzes", async (req, res) => {
   try {
+    console.log("hello");
     const { classId, section, subject, studentId } = req.query;
 
-    if (!classId || !section || !subject) {
+    // Step 1: Validate inputs
+    if (!classId || !section || !subject || !studentId) {
       return res.status(400).json({
         success: false,
         message: "classId, section, subject, and studentId are required.",
       });
     }
 
-    // Fetch published MCQs with correct answers included
+    // Step 2: Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(classId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid classId format.",
+      });
+    }
+
+    // Step 3: Fetch MCQs matching class, section, and subject
     const mcqs = await MCQ.find({
       class: new mongoose.Types.ObjectId(classId),
-      section,
-      subject,
+      section: section.trim(),
+      subject: subject.trim(),
       status: "published",
     }).select("_id question options duration correct_answer");
 
@@ -122,20 +133,21 @@ router.get("/student/quizzes", async (req, res) => {
       });
     }
 
-    // Check if student has already attempted this quiz
+    // Step 4: Check if the student has already attempted any quiz
     const existingAttempt = await QuizAttempt.findOne({
-      student: studentId,
-      class: classId,
-      section,
-      subject,
+      student: new mongoose.Types.ObjectId(studentId),
+      class: new mongoose.Types.ObjectId(classId),
+      section: section.trim(),
+      subject: subject.trim(),
     });
 
+    // Step 5: Return success with quiz data
     res.json({
       success: true,
       mcqs,
       duration: mcqs[0].duration,
       total: mcqs.length,
-      alreadyAttempted: !!existingAttempt, // Boolean flag
+      alreadyAttempted: !!existingAttempt,
     });
   } catch (error) {
     console.error("[ERROR] /student/quizzes", error);
@@ -360,7 +372,7 @@ router.get("/teacher/progress", async (req, res) => {
       section,
       subject,
     })
-      .populate("student", "name email") // assuming User model has name/email
+      .populate("student", "username email") // assuming User model has name/email
       .sort({ submittedAt: -1 }); // latest first
 
     if (attempts.length === 0) {
@@ -410,8 +422,10 @@ router.get("/teacher/progress", async (req, res) => {
     // Prepare student result list
     const studentResults = latestAttempts.map((attempt) => ({
       studentId: attempt.student._id,
-      name: attempt.student.name,
+      name: attempt.student.username,
       email: attempt.student.email,
+      correctAnswers: attempt.correctAnswers,
+      totalQuestions: attempt.mcqs.length,
       score: attempt.score,
       submittedAt: attempt.submittedAt,
     }));
@@ -428,6 +442,91 @@ router.get("/teacher/progress", async (req, res) => {
   } catch (error) {
     console.error("[ERROR] /teacher/progress", error);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+router.delete("/teacher/delete-mcqs", authMiddleware, async (req, res) => {
+  const { teacherId, classId, section, subject } = req.query;
+
+  if (!teacherId || !classId || !section || !subject) {
+    return res.status(400).json({
+      success: false,
+      message: "teacherId, classId, section, and subject are required.",
+    });
+  }
+
+  // Authorization: Only the teacher or admin
+  if (req.user.role !== "admin" && req.user._id.toString() !== teacherId) {
+    return res.status(403).json({ message: "Not authorized" });
+  }
+
+  try {
+    const result = await MCQ.deleteMany({
+      teacher: teacherId,
+      class: classId,
+      section,
+      subject,
+    });
+
+    res.json({
+      success: true,
+      deletedCount: result.deletedCount,
+      message: `${result.deletedCount} MCQs deleted successfully.`,
+    });
+  } catch (error) {
+    console.error("[ERROR] DELETE /teacher/delete-mcqs", error);
+    res.status(500).json({ success: false, message: "Failed to delete MCQs." });
+  }
+});
+// http://localhost:3000/api/mcq?classId=685a4805bf063541fd791afb&teacherId=68595760b52e47a899025a1f&subject=English
+router.get("/all-mcqs", async (req, res) => {
+  try {
+    // Optional query params for filtering
+    const { classId, teacherId, subject } = req.query;
+
+    const filter = {};
+
+    if (classId) filter.class = classId;
+    if (teacherId) filter.teacher = teacherId;
+    if (subject) filter.subject = subject;
+
+    const mcqs = await MCQ.find(filter)
+      .populate("class", "name grade section")
+      .populate("teacher", "username email")
+      .sort({ createdAt: -1 }); // recent first
+
+    const formatted = mcqs.map((mcq) => ({
+      id: mcq._id,
+      question: mcq.question,
+      options: mcq.options,
+      correctAnswer: mcq.correct_answer,
+      explanation: mcq.explanation,
+      subject: mcq.subject,
+      duration: mcq.duration,
+      questionType: mcq.question_type,
+      class: mcq.class
+        ? {
+            name: mcq.class.name,
+            grade: mcq.class.grade,
+            section: mcq.class.section,
+          }
+        : null,
+      teacher: mcq.teacher
+        ? {
+            username: mcq.teacher.username,
+            email: mcq.teacher.email,
+          }
+        : null,
+      createdAt: mcq.createdAt,
+    }));
+
+    res.json({ success: true, mcqs: formatted });
+  } catch (error) {
+    console.error("[ERROR IN /all-mcqs]", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch MCQs.",
+      error: error.message,
+    });
   }
 });
 

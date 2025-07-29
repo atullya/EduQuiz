@@ -34,20 +34,28 @@ classRoutes.post("/onlyclass", authMiddleware, async (req, res) => {
   try {
     const { name, section, grade, subjects, schedule } = req.body;
 
+    // Ensure only one subject is provided
+    if (!Array.isArray(subjects) || subjects.length !== 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Only one subject must be selected.",
+      });
+    }
+
     // 1. Check if a class with the same name + subjects + schedule exists
     const existingClass = await Classs.findOne({
       name,
       section,
       grade,
-      subjects: { $all: subjects, $size: subjects.length }, // exact match
-      schedule: { $all: schedule, $size: schedule.length }, // exact match
+      subjects: { $all: subjects, $size: subjects.length }, // exact subject match (1 subject)
+      schedule: { $all: schedule, $size: schedule.length }, // exact schedule match
     });
 
     if (existingClass) {
       return res.status(400).json({
         success: false,
         message:
-          "A class with the same name, subjects, and schedule already exists.",
+          "A class with the same name, subject, and schedule already exists.",
       });
     }
 
@@ -357,7 +365,7 @@ classRoutes.delete("/:id", authMiddleware, async (req, res) => {
 
   try {
     await Classs.findByIdAndDelete(req.params.id);
-    res.json({ message: "Class deleted successfully" });
+    res.json({ success: true, message: "Class deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -411,6 +419,43 @@ classRoutes.get(
     }
   }
 );
+// Get all studnts in a class
+classRoutes.get(
+  "/class-students/:classId",
+  authMiddleware,
+  async (req, res) => {
+    const { classId } = req.params;
+
+    try {
+      const cls = await Classs.findById(classId).populate(
+        "students",
+        "username"
+      );
+
+      if (!cls) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+
+      // Authorization: Only the assigned teacher or an admin can view
+      if (
+        req.user.role !== "admin" &&
+        !(
+          req.user.role === "teacher" &&
+          req.user._id.toString() === cls.teacher.toString()
+        )
+      ) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+
+      const studentNames = cls.students.map((student) => student.username);
+
+      res.json({ className: cls.name, studentNames });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
+);
+
 classRoutes.get(
   "/student-stats/:studentId",
   authMiddleware,

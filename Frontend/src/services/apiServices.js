@@ -59,14 +59,31 @@ class ApiService {
       method: "GET",
     });
   }
-
+  editUserDetails(userData, id) {
+    return this.request({
+      url: `/auth/editUser/${id}`,
+      method: "PUT",
+      data: userData,
+    });
+  }
+  deleteUserDetails(id) {
+    return this.request({
+      url: `/auth/deleteUser/${id}`,
+      method: "DELETE",
+    });
+  }
   getStudentsDetails() {
     return this.request({
       url: "/auth/getStudent",
       method: "GET",
     });
   }
-
+  getTeacherDetails() {
+    return this.request({
+      url: "/auth/getTeacher",
+      method: "GET",
+    });
+  }
   // Class endpoints
   getClasses() {
     return this.request({
@@ -88,6 +105,24 @@ class ApiService {
       url: "/classes/onlyclass",
       method: "POST",
       data: classData,
+    });
+  }
+  getClassForAdmin() {
+    return this.request({
+      url: "/classes/admin",
+      method: "GET",
+    });
+  }
+  getAllTeacherClasses() {
+    return this.request({
+      url: "/classes/teachers",
+      method: "GET",
+    });
+  }
+  getAllStudentClasses() {
+    return this.request({
+      url: "/classes/students",
+      method: "GET",
     });
   }
 
@@ -140,6 +175,13 @@ class ApiService {
   getAssignedClasses(teacherId) {
     return this.request({
       url: `/classes/teacher-stats/${teacherId}`,
+      method: "GET",
+    });
+  }
+
+  getStudentsByClass(classId) {
+    return this.request({
+      url: `/classes/class-students/${classId}`,
       method: "GET",
     });
   }

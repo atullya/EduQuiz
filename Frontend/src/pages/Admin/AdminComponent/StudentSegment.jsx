@@ -1,220 +1,207 @@
-"use client";
-
-import { useState } from "react";
-import { Search, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import AddStudentModal from "./AddStudentModal";
-import { useEffect } from "react";
-import { apiService } from "../../../services/apiServices";
+"use client"
+import { useState, useEffect } from "react"
+import { Plus, Trash2, Edit } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
+import AddStudentModal from "./AddStudentModal"
+import EditStudentModal from "./EditStudentModal"
+import { apiService } from "../../../services/apiServices"
 
 const StudentSegment = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [studentDetails, setStudentDetails] = useState([]);
-  const [students, setStudents] = useState([
-    {
-      id: 1,
-      name: "Alice Johnson",
-      class: "10A",
-      grade: "A",
-      attendance: "95%",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Bob Smith",
-      class: "11B",
-      grade: "B+",
-      attendance: "92%",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Carol Wilson",
-      class: "12A",
-      grade: "A-",
-      attendance: "98%",
-      status: "Active",
-    },
-    {
-      id: 4,
-      name: "David Brown",
-      class: "10B",
-      grade: "B",
-      attendance: "88%",
-      status: "Warning",
-    },
-  ]);
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [studentDetails, setStudentDetails] = useState([])
+  const [filteredStudents, setFilteredStudents] = useState([])
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedStudent, setSelectedStudent] = useState(null)
+  const [searchTerm, setSearchTerm] = useState("")
 
   const handleStudentAdded = () => {
-    // Refresh the students list or add the new student
-    console.log("Student added, refreshing list...");
-    // You can add logic here to refresh the students list from your API
-  };
+    console.log("Student added, refreshing list...")
+    getStudentDetail()
+  }
+
+  const handleStudentUpdated = () => {
+    console.log("Student updated, refreshing list...")
+    getStudentDetail()
+  }
+
   const getStudentDetail = async () => {
     try {
-      const response = await apiService.getStudentsDetails();
-      console.log("Response from getStudentsDetails:", response);
+      const response = await apiService.getStudentsDetails()
+      console.log("Response from getStudentsDetails:", response)
       if (response) {
-        setStudentDetails(response);
+        setStudentDetails(response)
+        setFilteredStudents(response)
       }
-      // if (response && response.success) {
-      //   console.log("Fetched students:", response.data);
-      // }
     } catch (error) {
-      console.error("Error fetching student details:", error);
+      console.error("Error fetching student details:", error)
     }
-  };
+  }
+
+  const handleEditStudent = (student) => {
+    setSelectedStudent(student)
+    setIsEditModalOpen(true)
+  }
+
+  const handleDeleteStudent = async (studentId) => {
+    if (window.confirm("Are you sure you want to delete this student?")) {
+      try {
+        await apiService.deleteUserDetails(studentId)
+        console.log("Student deleted successfully")
+        getStudentDetail()
+      } catch (error) {
+        console.error("Error deleting student:", error)
+        alert("Failed to delete student. Please try again.")
+      }
+    }
+  }
+
+  const handleSearch = (e) => {
+    const term = e.target.value.toLowerCase()
+    setSearchTerm(term)
+
+    if (term === "") {
+      setFilteredStudents(studentDetails)
+    } else {
+      const filtered = studentDetails.filter((student) => {
+        const fullName = `${student?.profile?.firstName || ""} ${student?.profile?.lastName || ""}`.toLowerCase()
+        const username = student.username.toLowerCase()
+        const email = student.email.toLowerCase()
+        const phone = student?.profile?.phone || ""
+        const address = student?.profile?.address || ""
+        const classInfo = student?.profile?.class || ""
+        const section = student?.profile?.section || ""
+
+        return (
+          fullName.includes(term) ||
+          username.includes(term) ||
+          email.includes(term) ||
+          phone.includes(term) ||
+          address.toLowerCase().includes(term) ||
+          classInfo.toLowerCase().includes(term) ||
+          section.toLowerCase().includes(term)
+        )
+      })
+      setFilteredStudents(filtered)
+    }
+  }
+
   useEffect(() => {
-    getStudentDetail();
-  }, []);
+    getStudentDetail()
+  }, [])
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Student Management</h2>
-        <div className="flex space-x-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search students..."
-              className="pl-10 rounded-xl border-gray-300"
-            />
+    <div className="p-4">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-4">Students</h1>
+
+        <div className="flex gap-4 mb-4">
+          <div className="flex-1">
+            <Input placeholder="Search students..." value={searchTerm} onChange={handleSearch} className="w-full" />
           </div>
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl shadow-lg"
-          >
+          <Button onClick={() => setIsModalOpen(true)} className="bg-green-500 hover:bg-green-600">
             <Plus className="mr-2 h-4 w-4" />
             Add Student
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-4">
-        {studentDetails && studentDetails.length > 0 ? (
-          studentDetails.map((student) => (
-            <Card
-              key={student._id}
-              className="border-0 bg-white/70 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 group"
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">
-                      a
-                      {/* {student.usename
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")} */}
+      <div className="space-y-4">
+        {filteredStudents && filteredStudents.length > 0 ? (
+          filteredStudents.map((student) => (
+            <Card key={student._id} className="border border-gray-200">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex gap-4">
+                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                      {student?.profile?.firstName && student?.profile?.lastName
+                        ? `${student.profile.firstName[0]}${student.profile.lastName[0]}`
+                        : student.username.substring(0, 2).toUpperCase()}
                     </div>
+
                     <div>
-                      <h4 className="text-lg font-semibold text-gray-900">
-                        {student.username}
-                      </h4>
-                      <p className="text-gray-600">Class {student.email}</p>
+                      <h3 className="text-xl font-semibold">{student.username}</h3>
+                      <p className="text-gray-600 mb-1">
+                        <strong>Name:</strong>{" "}
+                        {student?.profile?.firstName && student?.profile?.lastName
+                          ? `${student.profile.firstName} ${student.profile.lastName}`
+                          : "Not provided"}
+                      </p>
+                      <p className="text-gray-600 mb-1">
+                        <strong>Email:</strong> {student.email}
+                      </p>
+                      <p className="text-gray-600 mb-1">
+                        <strong>Phone:</strong> {student?.profile?.phone || "Not provided"}
+                      </p>
+                      <p className="text-gray-600 mb-1">
+                        <strong>Address:</strong> {student?.profile?.address || "Not provided"}
+                      </p>
+                      {student?.profile?.class && student?.profile?.section && (
+                        <p className="text-gray-600 mb-1">
+                          <strong>Class:</strong> Grade {student.profile.class} - Section {student.profile.section}
+                        </p>
+                      )}
+                      {student?.profile?.dateOfBirth && (
+                        <p className="text-gray-600">
+                          <strong>Date of Birth:</strong> {new Date(student.profile.dateOfBirth).toLocaleDateString()}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-6">
-                    <div className="text-center">
-                      {/* <Badge
-                        className={`${
-                          student.username.includes("A")
-                            ? "bg-green-100 text-green-800"
-                            : student.grade.includes("B")
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {student.username}
-                      </Badge> */}
-                      <p className="text-xs text-gray-500 mt-1">Grade</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="font-semibold text-gray-900">
-                        {student.username}
-                      </p>
-                      <p className="text-xs text-gray-500">Attendance</p>
-                    </div>
+
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      className="rounded-xl border-purple-300 text-purple-600 hover:bg-purple-50"
+                      onClick={() => handleEditStudent(student)}
+                      className="border-blue-500 text-blue-500 hover:bg-blue-50"
                     >
-                      View Details
+                      <Edit className="mr-1 h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDeleteStudent(student._id)}
+                      className="border-red-500 text-red-500 hover:bg-red-50"
+                    >
+                      <Trash2 className="mr-1 h-4 w-4" />
+                      Delete
                     </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))
+        ) : searchTerm ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500 text-lg mb-4">No students found for "{searchTerm}"</p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchTerm("")
+                setFilteredStudents(studentDetails)
+              }}
+            >
+              Clear Search
+            </Button>
+          </div>
         ) : (
-          <p>No students found</p>
+          <div className="text-center py-8">
+            <p className="text-gray-500 text-lg">No students available</p>
+          </div>
         )}
-
-        {/* {students.map((student) => (
-          <Card
-            key={student.id}
-            className="border-0 bg-white/70 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 group"
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">
-                    {student.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900">
-                      {student.name}
-                    </h4>
-                    <p className="text-gray-600">Class {student.class}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-6">
-                  <div className="text-center">
-                    <Badge
-                      className={`${
-                        student.grade.includes("A")
-                          ? "bg-green-100 text-green-800"
-                          : student.grade.includes("B")
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {student.grade}
-                    </Badge>
-                    <p className="text-xs text-gray-500 mt-1">Grade</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-semibold text-gray-900">
-                      {student.attendance}
-                    </p>
-                    <p className="text-xs text-gray-500">Attendance</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="rounded-xl border-purple-300 text-purple-600 hover:bg-purple-50"
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))} */}
       </div>
 
-      <AddStudentModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        onStudentAdded={handleStudentAdded}
+      <AddStudentModal open={isModalOpen} onOpenChange={setIsModalOpen} onStudentAdded={handleStudentAdded} />
+
+      <EditStudentModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        student={selectedStudent}
+        onStudentUpdated={handleStudentUpdated}
       />
     </div>
-  );
-};
+  )
+}
 
-export default StudentSegment;
+export default StudentSegment

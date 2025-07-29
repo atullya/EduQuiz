@@ -22,7 +22,7 @@ const ActionButtons = ({
       </Button>
       <Button
         onClick={onGenerate}
-        className="flex-1 h-14 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all text-lg"
+        className="flex-1 h-14 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm hover:shadow-md transition-all text-lg"
         disabled={isGenerating || isSetupNeeded}
       >
         {isGenerating ? (

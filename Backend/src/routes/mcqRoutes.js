@@ -167,4 +167,90 @@ router.post("/save-mcqs", async (req, res) => {
   }
 });
 
+/*
+router.post("/save-mcqs", async (req, res) => {
+  const { mcqs, classId, section, teacherId, duration, subject } = req.body;
+
+  if (!mcqs || !Array.isArray(mcqs) || mcqs.length === 0) {
+    return res
+      .status(400)
+      .json({ success: false, message: "No MCQs provided." });
+  }
+
+  if (!classId || !section || !teacherId || !subject) {
+    return res.status(400).json({
+      success: false,
+      message: "Class, section, subject, and teacher ID are required.",
+    });
+  }
+
+  try {
+    const existingClass = await Classs.findById(classId);
+    if (!existingClass) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Selected class not found." });
+    }
+
+    const existingTeacher = await User.findById(teacherId);
+    if (!existingTeacher || existingTeacher.role !== "teacher") {
+      return res.status(404).json({
+        success: false,
+        message: "Teacher not found or invalid role.",
+      });
+    }
+
+    // 🧹 Delete existing MCQs for the same class, section, subject, and teacher
+    await MCQ.deleteMany({
+      class: classId,
+      section,
+      subject,
+      teacher: teacherId,
+    });
+
+    const savedMCQs = [];
+
+    for (const mcqData of mcqs) {
+      const transformedOptions = Object.entries(mcqData.options).map(
+        ([key, value]) => ({ key, value })
+      );
+
+      const newMCQ = new MCQ({
+        question: mcqData.question,
+        options: transformedOptions,
+        correct_answer: mcqData.correct_answer,
+        explanation: mcqData.explanation,
+        question_type: mcqData.question_type || "Multiple Choice",
+        class: classId,
+        section,
+        subject,
+        teacher: teacherId,
+        duration: duration || 0,
+        status: "published",
+      });
+
+      await newMCQ.save();
+      savedMCQs.push(newMCQ);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "MCQs saved successfully!",
+      savedCount: savedMCQs.length,
+    });
+  } catch (error) {
+    console.error("[ERROR IN /save-mcqs]", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to save MCQs to database.",
+      error: error.message,
+    });
+  }
+});
+
+*/
+
+//try
+
+
 export default router;

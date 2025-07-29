@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,30 +28,23 @@ import {
 import { format } from "date-fns";
 import {
   Plus,
-  User,
-  GraduationCap,
-  Lock,
   Mail,
   Phone,
-  MapPin,
   CalendarIcon,
-  CheckCircle,
   AlertCircle,
   Loader2,
   Eye,
   EyeOff,
+  UserPlus,
 } from "lucide-react";
 import { apiService } from "../../../services/apiServices";
 
 const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
   const [formData, setFormData] = useState({
-    // User credentials
     username: "",
     email: "",
     password: "",
     role: "student",
-
-    // Profile information
     profile: {
       firstName: "",
       lastName: "",
@@ -67,9 +60,43 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [classes, setClasses] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [availableGrades, setAvailableGrades] = useState([]);
 
-  const classes = ["9", "10", "11", "12"];
-  const sections = ["A", "B", "C", "D"];
+  useEffect(() => {
+    getAllClasses();
+  }, []);
+
+  const getAllClasses = async () => {
+    try {
+      const classesData = await apiService.getClassForAdmin();
+      console.log("Classes fetched successfully:", classesData);
+
+      // Set the classes data
+      setClasses(classesData || []);
+
+      // Extract unique grades
+      const uniqueGrades = [
+        ...new Set(classesData?.map((cls) => cls.grade) || []),
+      ];
+      setAvailableGrades(uniqueGrades.sort());
+    } catch (error) {
+      console.error("Failed to fetch classes", error.message);
+      setClasses([]);
+      setAvailableGrades([]);
+    }
+  };
+
+  const getSectionsForGrade = (selectedGrade) => {
+    if (!selectedGrade || !classes.length) return [];
+
+    const sectionsForGrade = classes
+      .filter((cls) => cls.grade === selectedGrade)
+      .map((cls) => cls.section);
+
+    return [...new Set(sectionsForGrade)].sort();
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -88,10 +115,26 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
   const handleSelectChange = (name, value) => {
     if (name.startsWith("profile.")) {
       const profileField = name.replace("profile.", "");
-      setFormData((prev) => ({
-        ...prev,
-        profile: { ...prev.profile, [profileField]: value },
-      }));
+
+      // If grade is changed, reset section and update available sections
+      if (profileField === "class") {
+        const availableSections = getSectionsForGrade(value);
+        setSections(availableSections);
+
+        setFormData((prev) => ({
+          ...prev,
+          profile: {
+            ...prev.profile,
+            [profileField]: value,
+            section: "", // Reset section when grade changes
+          },
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          profile: { ...prev.profile, [profileField]: value },
+        }));
+      }
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -166,6 +209,7 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
         section: "",
       },
     });
+    setSections([]);
     setError("");
     setSuccess(false);
     setShowPassword(false);
@@ -177,19 +221,14 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
 
     setIsSubmitting(true);
     setError("");
-
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Here you would make the actual API call to create user
-      // const res = await apiService.createUser(formData);
       const res = await apiService.register(formData);
       if (!res || !res.success) {
         throw new Error(res.message || "Failed to create student user");
       }
       console.log("Student user created successfully:", res.data);
-      console.log("Student user created:", formData);
 
       setSuccess(true);
       setTimeout(() => {
@@ -206,143 +245,37 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
     }
   };
 
-  const autoFillUsername = () => {
-    if (formData.profile.firstName && formData.profile.lastName) {
-      const username = generateUsername();
-      setFormData((prev) => ({ ...prev, username }));
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full max-w-5xl !max-w-5xl !w-full max-h-[95vh] overflow-y-auto bg-gradient-to-br from-blue-50 to-purple-50">
-        <DialogHeader className="pb-6">
-          <DialogTitle className="flex items-center gap-3 text-2xl font-bold text-gray-900">
-            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
-              <GraduationCap className="h-6 w-6 text-white" />
-            </div>
-            Create New Student Account
+        <DialogHeader className="text-center pb-4">
+          <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center justify-center gap-2">
+            <UserPlus className="h-5 w-5 text-blue-600" />
+            Add New Student
           </DialogTitle>
-          <DialogDescription className="text-gray-600 text-base">
-            Set up a complete student profile with login credentials and
-            personal information.
+          <DialogDescription className="text-gray-600">
+            Fill in the student's information to create their account
           </DialogDescription>
         </DialogHeader>
 
         {success && (
-          <Alert className="border-green-200 bg-green-50 mb-6">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800 font-medium">
+          <Alert className="border-green-200 bg-green-50 mb-4">
+            <AlertCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
               Student account created successfully!
             </AlertDescription>
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Account Credentials Section */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Lock className="h-5 w-5 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Account Credentials
-              </h3>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+              Basic Information
+            </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Username *
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                    placeholder="student.username"
-                    disabled={isSubmitting}
-                    className="rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={autoFillUsername}
-                    disabled={
-                      !formData.profile.firstName || !formData.profile.lastName
-                    }
-                    className="rounded-lg"
-                  >
-                    Auto
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Email Address *
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="student@school.edu"
-                    disabled={isSubmitting}
-                    className="pl-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Password *
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    placeholder="Enter secure password"
-                    disabled={isSubmitting}
-                    className="pl-10 pr-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Personal Information Section */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <User className="h-5 w-5 text-purple-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Personal Information
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label className="text-sm font-medium text-gray-700">
                   First Name *
                 </Label>
@@ -352,11 +285,10 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
                   onChange={handleInputChange}
                   placeholder="Enter first name"
                   disabled={isSubmitting}
-                  className="rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                  className="mt-1"
                 />
               </div>
-
-              <div className="space-y-2">
+              <div>
                 <Label className="text-sm font-medium text-gray-700">
                   Last Name *
                 </Label>
@@ -366,89 +298,157 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
                   onChange={handleInputChange}
                   placeholder="Enter last name"
                   disabled={isSubmitting}
-                  className="rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                  className="mt-1"
                 />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Phone Number *
-                </Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    name="profile.phone"
-                    value={formData.profile.phone}
-                    onChange={handleInputChange}
-                    placeholder="1234567890"
+<div className="grid grid-cols-2 gap-4">
+  
+
+            <div>
+              <Label className="text-sm font-medium text-gray-700">
+                Email Address *
+              </Label>
+              <div className="relative mt-1">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="student@school.edu"
+                  disabled={isSubmitting}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium text-gray-700">
+                Phone Number *
+              </Label>
+              <div className="relative mt-1">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  name="profile.phone"
+                  value={formData.profile.phone}
+                  onChange={handleInputChange}
+                  placeholder="1234567890"
+                  disabled={isSubmitting}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+</div>
+
+<div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-700">
+                Date of Birth *
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
                     disabled={isSubmitting}
-                    className="pl-10 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    className="w-full justify-start text-left font-normal mt-1 bg-transparent"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.profile.dateOfBirth
+                      ? format(formData.profile.dateOfBirth, "PPP")
+                      : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.profile.dateOfBirth}
+                    onSelect={handleDateSelect}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
                   />
-                </div>
-              </div>
+                </PopoverContent>
+              </Popover>
+            </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Date of Birth *
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      disabled={isSubmitting}
-                      className="w-full justify-start text-left font-normal rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.profile.dateOfBirth
-                        ? format(formData.profile.dateOfBirth, "PPP")
-                        : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={formData.profile.dateOfBirth}
-                      onSelect={handleDateSelect}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Address
-                </Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 text-gray-400 h-4 w-4" />
-                  <Input
-                    name="profile.address"
-                    value={formData.profile.address}
-                    onChange={handleInputChange}
-                    placeholder="Enter full address"
-                    disabled={isSubmitting}
-                    className="pl-10 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-700">
+                Address
+              </Label>
+              <Input
+                name="profile.address"
+                value={formData.profile.address}
+                onChange={handleInputChange}
+                placeholder="Enter full address"
+                disabled={isSubmitting}
+                className="mt-1"
+              />
+            </div>
             </div>
           </div>
 
-          {/* Academic Information Section */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <GraduationCap className="h-5 w-5 text-green-600" />
+          {/* Account Details */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+              Account Details
+            </h3>
+<div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-700">
+                Username *
+              </Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  placeholder="student.username"
+                  disabled={isSubmitting}
+                />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Academic Information
-              </h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-2">
+            <div>
+              <Label className="text-sm font-medium text-gray-700">
+                Password *
+              </Label>
+              <div className="relative mt-1">
+                <Input
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder="Enter secure password"
+                  disabled={isSubmitting}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+</div>
+          </div>
+          {/* Academic Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+              Academic Information
+            </h3>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label className="text-sm font-medium text-gray-700">
                   Class *
                 </Label>
@@ -457,20 +457,19 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
                   onValueChange={(v) => handleSelectChange("profile.class", v)}
                   disabled={isSubmitting}
                 >
-                  <SelectTrigger className="rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500">
+                  <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select class" />
                   </SelectTrigger>
                   <SelectContent>
-                    {classes.map((cls) => (
-                      <SelectItem key={cls} value={cls}>
-                        Class {cls}
+                    {availableGrades.map((grade) => (
+                      <SelectItem key={grade} value={grade}>
+                        Grade {grade}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2">
+              <div>
                 <Label className="text-sm font-medium text-gray-700">
                   Section *
                 </Label>
@@ -479,10 +478,16 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
                   onValueChange={(v) =>
                     handleSelectChange("profile.section", v)
                   }
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !formData.profile.class}
                 >
-                  <SelectTrigger className="rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500">
-                    <SelectValue placeholder="Select section" />
+                  <SelectTrigger className="mt-1">
+                    <SelectValue
+                      placeholder={
+                        formData.profile.class
+                          ? "Select section"
+                          : "Select class first"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {sections.map((section) => (
@@ -497,15 +502,13 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
           </div>
 
           {error && (
-            <Alert variant="destructive" className="bg-red-50 border-red-200">
+            <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-red-800 font-medium">
-                {error}
-              </AlertDescription>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
               type="button"
               variant="outline"
@@ -514,24 +517,23 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
                 onOpenChange(false);
               }}
               disabled={isSubmitting}
-              className="px-6 py-2 rounded-lg border-gray-300 hover:bg-gray-50"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="px-8 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg shadow-lg font-medium"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Account...
+                  Creating...
                 </>
               ) : (
                 <>
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Student Account
+                  Create Student
                 </>
               )}
             </Button>
