@@ -1,5 +1,4 @@
 "use client"
-
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BookOpen } from "lucide-react"
@@ -98,17 +97,13 @@ const MCQmain = ({ user }) => {
         mcqsData = apiResponse
         setSuccess(true)
         setSuccessMessage(
-          `🎉 Successfully generated ${formData.numberOfQuestions} MCQ${
-            Number(formData.numberOfQuestions) > 1 ? "s" : ""
-          }!`,
+          `🎉 Successfully generated ${formData.numberOfQuestions} MCQ${Number(formData.numberOfQuestions) > 1 ? "s" : ""}!`,
         )
       } else if (apiResponse?.success && Array.isArray(apiResponse.mcqs)) {
         mcqsData = apiResponse.mcqs
         setSuccess(true)
         setSuccessMessage(
-          `🎉 Successfully generated ${formData.numberOfQuestions} MCQ${
-            Number(formData.numberOfQuestions) > 1 ? "s" : ""
-          }!`,
+          `🎉 Successfully generated ${formData.numberOfQuestions} MCQ${Number(formData.numberOfQuestions) > 1 ? "s" : ""}!`,
         )
       } else {
         setError(apiResponse?.message || "API returned invalid data.")
@@ -140,11 +135,29 @@ const MCQmain = ({ user }) => {
     }
   }
 
-  const handleExportMCQs = async () => {
-    if (generatedMCQs.length === 0) return setError("No MCQs to export.")
+  // IMPORTANT: Receive the updated MCQs from MCQDisplay on export
+  const handleExportMCQs = async (updatedMCQs = generatedMCQs) => {
+    if (updatedMCQs.length === 0) return setError("No MCQs to export.")
+
+    // Validate that all MCQs have required fields
+    const invalidMCQs = updatedMCQs.filter(
+      (mcq) =>
+        !mcq.question.trim() ||
+        !mcq.options.A.trim() ||
+        !mcq.options.B.trim() ||
+        !mcq.options.C.trim() ||
+        !mcq.options.D.trim() ||
+        !mcq.correct_answer,
+    )
+
+    if (invalidMCQs.length > 0) {
+      return setError("Please fill in all questions, options, and select correct answers before exporting.")
+    }
+
     if (!formData.classId || !formData.section || !user?._id) {
       return setError("Select class/section and make sure you're logged in.")
     }
+
     if (!formData.mcqDuration || isNaN(Number(formData.mcqDuration)) || Number(formData.mcqDuration) <= 0) {
       return setError("Enter valid MCQ duration before exporting.")
     }
@@ -156,7 +169,7 @@ const MCQmain = ({ user }) => {
 
     try {
       const response = await mcqService.saveMCQs(
-        generatedMCQs,
+        updatedMCQs,
         formData.classId,
         formData.section,
         user._id,
@@ -241,7 +254,12 @@ const MCQmain = ({ user }) => {
               successMessage={successMessage}
             />
 
-            <ActionButtons onReset={resetForm} onGenerate={handleGenerateMCQ} isGenerating={isGenerating} />
+            <ActionButtons
+              onReset={resetForm}
+              onGenerate={handleGenerateMCQ}
+              isGenerating={isGenerating}
+              isSetupNeeded={false} // pass actual logic if needed
+            />
           </CardContent>
         </Card>
 

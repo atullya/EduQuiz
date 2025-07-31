@@ -1,232 +1,187 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  BarChart,
-  Target,
-  CheckSquare,
-  ClipboardList,
-  History,
-  Award,
-  BookOpen,
-} from "lucide-react";
+"use client"
+import { useEffect, useState } from "react"
+import axios from "axios"
 
 const StudentProgress = ({ studentId }) => {
-  const [progress, setProgress] = useState(null);
-  const [attempts, setAttempts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [progress, setProgress] = useState(null)
+  const [attempts, setAttempts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!studentId) {
-      setError("Student ID is required.");
-      setLoading(false);
-      return;
+      setError("Student ID is required.")
+      setLoading(false)
+      return
     }
 
     const fetchProgress = async () => {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
       try {
-        const res = await axios.get(
-          `http://localhost:3000/api/smcq/student/progress/${studentId}`
-        );
+        const res = await axios.get(`http://localhost:3000/api/smcq/student/progress/${studentId}`)
         if (res.data.success) {
-          setProgress(res.data.progress);
-          setAttempts(res.data.attempts);
+          setProgress(res.data.progress)
+          setAttempts(res.data.attempts)
         } else {
-          setError("Failed to fetch progress.");
+          setError("Failed to fetch progress.")
         }
       } catch (err) {
-        console.error("Error fetching progress:", err);
-        setError(
-          "Error fetching progress. Please check your network connection."
-        );
+        console.error("Error fetching progress:", err)
+        setError("Error fetching progress. Please check your network connection.")
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchProgress();
-  }, [studentId]);
+    fetchProgress()
+  }, [studentId])
 
-  if (loading)
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="p-6 text-center text-gray-600">
-          Loading quiz progress...
-        </p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Loading quiz progress...</p>
+        </div>
       </div>
-    );
-  if (error)
+    )
+  }
+
+  if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="p-6 text-center text-red-600">{error}</p>
+        <div className="text-center bg-white p-8 rounded-lg border border-red-200">
+          <p className="text-red-600 text-lg font-medium">{error}</p>
+        </div>
       </div>
-    );
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 font-sans antialiased">
-      <div className="max-w-6xl mx-auto">
-        <h2 className="text-4xl font-extrabold text-gray-900 text-center mb-10">
-          My Quiz Performance
-        </h2>
+    <div className="min-h-screen bg-gray-50 px-4 py-10">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2 text-gray-800">My Quiz Performance</h1>
+          <p className="text-gray-600">Track your progress and see how you're improving!</p>
+        </div>
 
         {!progress || progress.totalAttempts === 0 ? (
-          <Card className="p-12 text-center bg-white rounded-xl shadow-lg flex flex-col items-center justify-center">
-            <Award className="w-16 h-16 text-yellow-500 mb-6" />
-            <CardTitle className="text-2xl font-semibold mb-2">
-              No Quizzes Attempted Yet
-            </CardTitle>
-            <p className="text-md text-gray-600 max-w-md">
-              Start taking quizzes to see your progress and performance here!
-            </p>
-          </Card>
+          <div className="text-center border-2 border-dashed border-gray-300 p-8 rounded-lg bg-white">
+            <div className="text-4xl mb-4">📚</div>
+            <p className="text-xl font-medium text-gray-700 mb-2">No quizzes attempted yet.</p>
+            <p className="text-gray-500">Start taking quizzes to see your progress here!</p>
+          </div>
         ) : (
           <>
-            {/* Progress Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-              <Card className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Attempts
-                  </CardTitle>
-                  <BarChart className="h-5 w-5 text-gray-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-4xl font-bold text-blue-700">
-                    {progress.totalAttempts}
-                  </div>
-                  <p className="text-xs text-gray-500">Quizzes completed</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Average Score
-                  </CardTitle>
-                  <Target className="h-5 w-5 text-gray-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-4xl font-bold text-green-700">
-                    {progress.averageScore.toFixed(2)}%
-                  </div>
-                  <p className="text-xs text-gray-500">Across all attempts</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Correct Answers
-                  </CardTitle>
-                  <CheckSquare className="h-5 w-5 text-gray-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-4xl font-bold text-purple-700">
-                    {progress.totalCorrectAnswers}
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Total correct responses
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Questions Answered
-                  </CardTitle>
-                  <ClipboardList className="h-5 w-5 text-gray-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-4xl font-bold text-orange-700">
-                    {progress.totalQuestionsAnswered}
-                  </div>
-                  <p className="text-xs text-gray-500">Total questions faced</p>
-                </CardContent>
-              </Card>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="border border-blue-200 p-6 rounded-lg bg-white shadow-sm">
+                <p className="text-sm text-blue-600 font-medium mb-1">Total Attempts</p>
+                <p className="text-2xl font-bold text-blue-700">{progress.totalAttempts}</p>
+                <p className="text-xs text-gray-500 mt-1">Quizzes completed</p>
+              </div>
+              <div className="border border-green-200 p-6 rounded-lg bg-white shadow-sm">
+                <p className="text-sm text-green-600 font-medium mb-1">Average Score</p>
+                <p className="text-2xl font-bold text-green-700">{progress.averageScore.toFixed(1)}%</p>
+                <p className="text-xs text-gray-500 mt-1">Overall performance</p>
+              </div>
+              <div className="border border-purple-200 p-6 rounded-lg bg-white shadow-sm">
+                <p className="text-sm text-purple-600 font-medium mb-1">Correct Answers</p>
+                <p className="text-2xl font-bold text-purple-700">{progress.totalCorrectAnswers}</p>
+                <p className="text-xs text-gray-500 mt-1">Right responses</p>
+              </div>
+              <div className="border border-orange-200 p-6 rounded-lg bg-white shadow-sm">
+                <p className="text-sm text-orange-600 font-medium mb-1">Questions Answered</p>
+                <p className="text-2xl font-bold text-orange-700">{progress.totalQuestionsAnswered}</p>
+                <p className="text-xs text-gray-500 mt-1">Total questions</p>
+              </div>
             </div>
 
-            {/* Recent Quiz Attempts Table */}
-            <Card className="bg-white rounded-xl shadow-lg p-6">
-              <CardTitle className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <History className="h-6 w-6 text-gray-700" />
-                Recent Quiz Attempts
-              </CardTitle>
+            {/* Performance Indicator */}
+            <div className="mb-6 p-4 rounded-lg bg-white border-l-4 border-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">
+                    {progress.averageScore >= 80
+                      ? "🎉 Excellent Performance!"
+                      : progress.averageScore >= 60
+                        ? "👍 Good Work!"
+                        : "💪 Keep Practicing!"}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {progress.averageScore >= 80
+                      ? "You're doing amazing! Keep it up!"
+                      : progress.averageScore >= 60
+                        ? "You're on the right track. Keep improving!"
+                        : "Don't give up! Practice makes perfect!"}
+                  </p>
+                </div>
+                <div className="text-2xl">
+                  {progress.averageScore >= 80 ? "🌟" : progress.averageScore >= 60 ? "📈" : "🎯"}
+                </div>
+              </div>
+            </div>
+
+            {/* Attempts Table */}
+            <div className="bg-white p-6 border rounded-lg shadow-sm">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">Recent Quiz Attempts</h2>
               {attempts.length === 0 ? (
-                <div className="p-8 text-center text-gray-600">
-                  <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-lg font-medium">
-                    No recent attempts to display.
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Your quiz history will appear here after you complete a
-                    quiz.
-                  </p>
+                <div className="text-center py-8">
+                  <div className="text-3xl mb-3">📝</div>
+                  <p className="text-gray-600">No recent attempts available.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gray-50">
-                        <TableHead className="w-[120px]">Date</TableHead>
-                        <TableHead>Class</TableHead>
-                        <TableHead>Section</TableHead>
-                        <TableHead>Subject</TableHead>
-                        <TableHead className="text-right">Score (%)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {attempts.map((attempt) => (
-                        <TableRow
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="text-left border-b-2 border-gray-200 bg-gray-50">
+                        <th className="py-3 px-4 font-semibold text-gray-700">Date</th>
+                        <th className="py-3 px-4 font-semibold text-gray-700">Class</th>
+                        <th className="py-3 px-4 font-semibold text-gray-700">Section</th>
+                        <th className="py-3 px-4 font-semibold text-gray-700">Subject</th>
+                        <th className="py-3 px-4 text-right font-semibold text-gray-700">Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {attempts.map((attempt, index) => (
+                        <tr
                           key={attempt._id}
-                          className="hover:bg-gray-50 transition-colors"
+                          className={`border-b hover:bg-gray-50 transition-colors ${
+                            index % 2 === 0 ? "bg-white" : "bg-gray-25"
+                          }`}
                         >
-                          <TableCell className="font-medium">
+                          <td className="py-3 px-4 text-gray-700">
                             {new Date(attempt.submittedAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            {attempt.class?.name || attempt.class}
-                          </TableCell>
-                          <TableCell>{attempt.section}</TableCell>
-                          <TableCell>{attempt.subject}</TableCell>
-                          <TableCell className="text-right font-semibold">
+                          </td>
+                          <td className="py-3 px-4 text-gray-700">{attempt.class?.name || attempt.class}</td>
+                          <td className="py-3 px-4 text-gray-700">{attempt.section}</td>
+                          <td className="py-3 px-4 text-gray-700">{attempt.subject}</td>
+                          <td className="py-3 px-4 text-right">
                             <span
-                              className={`${
-                                attempt.score >= 70
-                                  ? "text-green-600"
-                                  : attempt.score >= 50
-                                  ? "text-yellow-600"
-                                  : "text-red-600"
+                              className={`font-bold px-3 py-1 rounded-full text-sm ${
+                                attempt.score >= 80
+                                  ? "bg-green-100 text-green-800"
+                                  : attempt.score >= 60
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-red-100 text-red-800"
                               }`}
                             >
-                              {attempt.score.toFixed(2)}
+                              {attempt.score.toFixed(1)}%
                             </span>
-                          </TableCell>
-                        </TableRow>
+                          </td>
+                        </tr>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </tbody>
+                  </table>
                 </div>
               )}
-            </Card>
+            </div>
           </>
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default StudentProgress;
+export default StudentProgress

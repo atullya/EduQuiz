@@ -30,3 +30,7 @@ const AlertMessages = ({ error, success, numberOfQuestions, successMessage }) =>
 };
 
 export default AlertMessages;
+
+
+
+
