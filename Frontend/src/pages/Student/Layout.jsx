@@ -36,7 +36,7 @@ const Layout = () => {
           minHeight: "100vh",
         }}
       >
-        <Topbar />
+        <Topbar user={user} />
         <main className="p-6 flex-1 overflow-auto">
           {/* Render content based on active tab */}
           {activeTab === "overview" && (

@@ -7,6 +7,7 @@ export const registerUser = async (req, res) => {
   try {
     const { username, email, password, role, profile } = req.body;
 
+    // Basic validation
     if (!username || !email || !password) {
       return res.status(400).json({
         success: false,
@@ -21,21 +22,22 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const checkExistingUser = await User.findOne({ email });
-    if (checkExistingUser) {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(400).json({
         success: false,
         message: "User already exists with that email",
       });
     }
 
-    // ✅ Check for valid class/section BEFORE saving user
+    // Check class/section for students and teachers
     let targetClass = null;
     if (role === "student" || role === "teacher") {
       if (!profile?.class || !profile?.section) {
         return res.status(400).json({
           success: false,
-          message: "Class and section must be provided for student/teacher",
+          message: "Class and section must be provided",
         });
       }
 
@@ -51,21 +53,30 @@ export const registerUser = async (req, res) => {
         });
       }
 
-      if (role === "teacher") {
-        const alreadyAssigned = await Classs.findOne({
-          teacher: { $exists: true, $ne: null, $eq: targetClass.teacher },
+      // --- STUDENT RULE ---
+      if (role === "student") {
+        // Check if student is already assigned to any class
+        const studentAssigned = await Classs.findOne({
+          students: profile.studentId,
         });
-        if (alreadyAssigned) {
+
+        if (studentAssigned) {
           return res.status(400).json({
             success: false,
-            message: "A teacher is already assigned to this class",
+            message: "Student is already assigned to a class and section",
           });
         }
       }
+
+      // --- TEACHER RULE ---
+      // A teacher can be assigned to multiple subjects/classes
+      // No restriction needed here if you allow one teacher to multiple subjects/classes
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create user
     const newUser = new User({
       username,
       email,
@@ -76,13 +87,14 @@ export const registerUser = async (req, res) => {
 
     const insertUser = await newUser.save();
 
-    // ✅ Add student or teacher to class (since class is already verified)
+    // Assign student or teacher to class
     if (role === "student") {
       if (!targetClass.students.includes(insertUser._id)) {
         targetClass.students.push(insertUser._id);
         await targetClass.save();
       }
     } else if (role === "teacher") {
+      // Assign teacher to class (optional: you can allow multiple teachers)
       targetClass.teacher = insertUser._id;
       await targetClass.save();
     }
@@ -94,6 +106,16 @@ export const registerUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in registerUser:", error);
+
+    // Handle unique index violation (duplicate class)
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Duplicate entry detected. Check email, username or class uniqueness.",
+      });
+    }
+
     res.status(500).json({ message: "Internal server error" });
   }
 };

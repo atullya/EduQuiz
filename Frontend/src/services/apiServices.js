@@ -109,7 +109,7 @@ class ApiService {
   }
   getClassForAdmin() {
     return this.request({
-      url: "/classes/admin",
+      url: "/classes/classes/admin",
       method: "GET",
     });
   }
@@ -175,6 +175,13 @@ class ApiService {
   getAssignedClasses(teacherId) {
     return this.request({
       url: `/classes/teacher-stats/${teacherId}`,
+      method: "GET",
+    });
+  }
+
+  getAssignedClassesStudnet(studentId) {
+    return this.request({
+      url: `/classes/student-stats/${studentId}`,
       method: "GET",
     });
   }
@@ -292,6 +299,20 @@ class ApiService {
       url: "/assignment/create",
       method: "POST",
       data: assignmentData,
+    });
+  }
+
+  //notification
+  getNotifications(userId) {
+    return this.request({
+      url: `/student/notifications`,
+      method: "GET",
+    });
+  }
+  markNotificationRead(notificationId) {
+    return this.request({
+      url: `/student/notifications/read/${notificationId}`,
+      method: "PUT",
     });
   }
 }

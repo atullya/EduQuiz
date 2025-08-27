@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,36 +43,23 @@ import {
 import { apiService } from "../../../services/apiServices";
 
 const OverViewPage = ({ user }) => {
-  const mockRecentActivities = [
-    {
-      id: 1,
-      action: "New student enrolled",
-      user: "Alice Johnson",
-      time: "2 hours ago",
-      type: "enrollment",
-    },
-    {
-      id: 2,
-      action: "Class schedule updated",
-      user: "John Smith",
-      time: "4 hours ago",
-      type: "schedule",
-    },
-    {
-      id: 3,
-      action: "Assignment created",
-      user: "Sarah Johnson",
-      time: "6 hours ago",
-      type: "assignment",
-    },
-    {
-      id: 4,
-      action: "Grade submitted",
-      user: "Michael Brown",
-      time: "8 hours ago",
-      type: "grade",
-    },
-  ];
+  const [classStatus, setClassStatus] = useState("");
+
+  const StudentStats = async () => {
+    try {
+      const data = await apiService.getAssignedClassesStudent(user?._id);
+      console.log("Student stats:", data);
+      setClassStatus(data);
+    } catch (err) {
+      console.error("Failed to fetch teacher stats", err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.role === "student" && user?._id) {
+      StudentStats();
+    }
+  }, [user?._id, user?.role]);
   const [count, setCount] = React.useState(0);
   return (
     <div className="space-y-8">
@@ -100,37 +87,17 @@ const OverViewPage = ({ user }) => {
       </div>
       {/* stats section  */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-xl transition-all duration-300 group">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-600 text-sm font-semibold tracking-wide">
-                  Total Students
-                </p>
-                <p className="text-3xl font-bold text-blue-700 tracking-tight">
-                  {count.totalStudents}
-                </p>
-                <p className="text-blue-500 text-xs mt-1 font-medium">
-                  Enrolled this year
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <GraduationCap className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            <div className="absolute -bottom-2 -right-2 w-16 h-16 bg-blue-200/50 rounded-full"></div>
-          </CardContent>
-        </Card>
+       
 
         <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-green-50 to-green-100 hover:shadow-xl transition-all duration-300 group">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-green-600 text-sm font-semibold tracking-wide">
-                  Total Teachers
+                  Total Assignments
                 </p>
                 <p className="text-3xl font-bold text-green-700 tracking-tight">
-                  {count.totalTeachers}
+                  {classStatus?.totalAssignments || 0}
                 </p>
                 <p className="text-green-500 text-xs mt-1 font-medium">
                   Active faculty
@@ -152,7 +119,7 @@ const OverViewPage = ({ user }) => {
                   Total Classes
                 </p>
                 <p className="text-3xl font-bold text-purple-700 tracking-tight">
-                  {count.totalClasses}
+                     {classStatus?.totalClasses || 0}
                 </p>
                 <p className="text-purple-500 text-xs mt-1 font-medium">
                   Active classes

@@ -19,6 +19,8 @@ const classSchema = new mongoose.Schema({
   subjects: [String],
   createdAt: { type: Date, default: Date.now },
 });
+// Add unique compound index
+classSchema.index({ grade: 1, section: 1, name: 1 }, { unique: true });
 
 const Classs = mongoose.model("Class", classSchema);
 export default Classs;

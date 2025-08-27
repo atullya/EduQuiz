@@ -29,6 +29,7 @@ const MCQmain = ({ user }) => {
   const [success, setSuccess] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
   const [generatedMCQs, setGeneratedMCQs] = useState([])
+  const [hasExported, setHasExported] = useState(false) // NEW: Track export status
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -36,6 +37,7 @@ const MCQmain = ({ user }) => {
     setError("")
     setSuccess(false)
     setSuccessMessage("")
+    setHasExported(false)
   }
 
   const handleSelectChange = (name, value) => {
@@ -43,6 +45,7 @@ const MCQmain = ({ user }) => {
     setError("")
     setSuccess(false)
     setSuccessMessage("")
+    setHasExported(false)
   }
 
   const handleFileChange = (e) => {
@@ -62,15 +65,10 @@ const MCQmain = ({ user }) => {
     if (!formData.subject) return setError("Please select a subject"), false
     if (!formData.numberOfQuestions) return setError("Please select number of questions"), false
     if (!formData.platform) return setError("Please select a platform"), false
-    if (formData.platform === "text" && !formData.textContent.trim()) {
-      return setError("Please provide text content"), false
-    }
-    if (formData.platform === "pdf" && !formData.pdfFile) {
-      return setError("Please upload a PDF file"), false
-    }
-    if (!formData.mcqDuration || isNaN(Number(formData.mcqDuration)) || Number(formData.mcqDuration) <= 0) {
+    if (formData.platform === "text" && !formData.textContent.trim()) return setError("Please provide text content"), false
+    if (formData.platform === "pdf" && !formData.pdfFile) return setError("Please upload a PDF file"), false
+    if (!formData.mcqDuration || isNaN(Number(formData.mcqDuration)) || Number(formData.mcqDuration) <= 0)
       return setError("Please enter a valid MCQ duration (in minutes)."), false
-    }
     return true
   }
 
@@ -83,6 +81,7 @@ const MCQmain = ({ user }) => {
     setSuccess(false)
     setSuccessMessage("")
     setGeneratedMCQs([])
+    setHasExported(false)
 
     try {
       let apiResponse
@@ -95,16 +94,8 @@ const MCQmain = ({ user }) => {
       let mcqsData = []
       if (Array.isArray(apiResponse)) {
         mcqsData = apiResponse
-        setSuccess(true)
-        setSuccessMessage(
-          `🎉 Successfully generated ${formData.numberOfQuestions} MCQ${Number(formData.numberOfQuestions) > 1 ? "s" : ""}!`,
-        )
       } else if (apiResponse?.success && Array.isArray(apiResponse.mcqs)) {
         mcqsData = apiResponse.mcqs
-        setSuccess(true)
-        setSuccessMessage(
-          `🎉 Successfully generated ${formData.numberOfQuestions} MCQ${Number(formData.numberOfQuestions) > 1 ? "s" : ""}!`,
-        )
       } else {
         setError(apiResponse?.message || "API returned invalid data.")
         return
@@ -115,9 +106,7 @@ const MCQmain = ({ user }) => {
         ;["A", "B", "C", "D"].forEach((label, i) => {
           options[label] = mcq.options[i] || ""
         })
-
         const correctKey = Object.entries(options).find(([, val]) => val === mcq.answer)?.[0]
-
         return {
           id: index + 1,
           question: mcq.question,
@@ -128,6 +117,10 @@ const MCQmain = ({ user }) => {
       })
 
       setGeneratedMCQs(transformed)
+      setSuccess(true)
+      setSuccessMessage(
+        `🎉 Successfully generated ${formData.numberOfQuestions} MCQ${Number(formData.numberOfQuestions) > 1 ? "s" : ""}!`,
+      )
     } catch (err) {
       setError(err.message || "Failed to generate MCQs.")
     } finally {
@@ -135,11 +128,10 @@ const MCQmain = ({ user }) => {
     }
   }
 
-  // IMPORTANT: Receive the updated MCQs from MCQDisplay on export
   const handleExportMCQs = async (updatedMCQs = generatedMCQs) => {
+    if (hasExported) return setError("You have already exported these MCQs.")
     if (updatedMCQs.length === 0) return setError("No MCQs to export.")
 
-    // Validate that all MCQs have required fields
     const invalidMCQs = updatedMCQs.filter(
       (mcq) =>
         !mcq.question.trim() ||
@@ -149,18 +141,10 @@ const MCQmain = ({ user }) => {
         !mcq.options.D.trim() ||
         !mcq.correct_answer,
     )
-
-    if (invalidMCQs.length > 0) {
-      return setError("Please fill in all questions, options, and select correct answers before exporting.")
-    }
-
-    if (!formData.classId || !formData.section || !user?._id) {
-      return setError("Select class/section and make sure you're logged in.")
-    }
-
-    if (!formData.mcqDuration || isNaN(Number(formData.mcqDuration)) || Number(formData.mcqDuration) <= 0) {
+    if (invalidMCQs.length > 0) return setError("Please fill all questions, options, and correct answers before exporting.")
+    if (!formData.classId || !formData.section || !user?._id) return setError("Select class/section and make sure you're logged in.")
+    if (!formData.mcqDuration || isNaN(Number(formData.mcqDuration)) || Number(formData.mcqDuration) <= 0)
       return setError("Enter valid MCQ duration before exporting.")
-    }
 
     setIsExporting(true)
     setError("")
@@ -180,6 +164,7 @@ const MCQmain = ({ user }) => {
       if (response.success) {
         setSuccess(true)
         setSuccessMessage(`✅ Successfully exported ${response.savedCount} MCQs!`)
+        setHasExported(true) // Mark as exported
       } else {
         setError(response.message || "Export failed.")
       }
@@ -206,12 +191,13 @@ const MCQmain = ({ user }) => {
     setSuccess(false)
     setSuccessMessage("")
     setGeneratedMCQs([])
+    setHasExported(false)
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Simple Header */}
+        {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-2">
             <BookOpen className="h-8 w-8 text-blue-600 mr-3" />
@@ -220,7 +206,7 @@ const MCQmain = ({ user }) => {
           <p className="text-gray-600">Generate multiple choice questions from text or PDF files</p>
         </div>
 
-        {/* Main Form Card */}
+        {/* Form Card */}
         <Card className="shadow-sm border border-gray-200">
           <CardHeader className="border-b border-gray-100 pb-4">
             <CardTitle className="text-xl font-semibold text-gray-900">Generation Settings</CardTitle>
@@ -232,39 +218,40 @@ const MCQmain = ({ user }) => {
               onSelectChange={handleSelectChange}
               isGenerating={isGenerating}
             />
-
             <GenerationSettings
               formData={formData}
               onSelectChange={handleSelectChange}
               onInputChange={handleInputChange}
               isGenerating={isGenerating}
             />
-
             <ContentInput
               formData={formData}
               onInputChange={handleInputChange}
               onFileChange={handleFileChange}
               isGenerating={isGenerating}
             />
-
             <AlertMessages
               error={error}
               success={success}
               numberOfQuestions={formData.numberOfQuestions}
               successMessage={successMessage}
             />
-
             <ActionButtons
               onReset={resetForm}
               onGenerate={handleGenerateMCQ}
               isGenerating={isGenerating}
-              isSetupNeeded={false} // pass actual logic if needed
+              isSetupNeeded={false}
             />
           </CardContent>
         </Card>
 
         {/* MCQ Display */}
-        <MCQDisplay mcqs={generatedMCQs} onExport={handleExportMCQs} isExporting={isExporting} />
+        <MCQDisplay
+          mcqs={generatedMCQs}
+          onExport={handleExportMCQs}
+          isExporting={isExporting}
+          hasExported={hasExported} // Pass export status
+        />
       </div>
     </div>
   )

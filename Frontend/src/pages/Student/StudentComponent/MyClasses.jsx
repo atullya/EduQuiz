@@ -121,6 +121,7 @@ export default function MyClasses({ user }) {
                           <div className="flex items-center">
                             📅 {classItem.schedule?.join(", ")}
                           </div>
+                          <br></br>
                           {classItem.teacher && (
                             <div className="flex items-center">
                               <UserIcon className="w-4 h-4 mr-1" />
@@ -132,10 +133,10 @@ export default function MyClasses({ user }) {
                       </div>
                     </div>
                     <div className="flex space-x-2">
-                      <Button className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl">
+                      {/* <Button className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl">
                         View Details
                         <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
+                      </Button> */}
                     </div>
                   </div>
                 </CardContent>

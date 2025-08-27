@@ -3,7 +3,7 @@ import Assignment from "../models/assignmnet.model.js";
 import Classs from "../models/class.model.js";
 import User from "../models/user.model.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
-
+import Notification from "../models/notification.model.js";
 const assignmentRoutes = express.Router();
 
 // ✅ CREATE assignment
@@ -18,7 +18,7 @@ assignmentRoutes.post("/create", authMiddleware, async (req, res) => {
 
   try {
     // Check if class exists
-    const classData = await Classs.findById(classId);
+    const classData = await Classs.findById(classId).populate("students");
     if (!classData) {
       return res
         .status(400)
@@ -41,7 +41,20 @@ assignmentRoutes.post("/create", authMiddleware, async (req, res) => {
     });
 
     await assignment.save();
-    res.status(201).json(assignment);
+    // ✅ Create notifications for all students in the class
+    const studentIds = classData.students.map((s) => s._id);
+    const notifications = studentIds.map((studentId) => ({
+      recipients: [studentId], // MUST be `recipients` not `user`
+      title: `New assignment in ${subject}`,
+      message: `New assignment "${title}" has been added in ${subject}`,
+      type: "assignment",
+    }));
+
+    await Notification.insertMany(notifications);
+    res.status(201).json({
+      assignment,
+      message: "Assignment created and notifications sent.",
+    });
   } catch (err) {
     console.error("Create assignment error:", err);
     res.status(400).json({ message: err.message });
@@ -201,10 +214,19 @@ assignmentRoutes.delete(
         });
       }
 
+      // Delete all notifications related to this assignment
+      await Notification.deleteMany({
+        type: "assignment",
+        message: { $regex: assignment.title, $options: "i" }, // match notifications mentioning this assignment
+      });
+
       // Delete the assignment
       await Assignment.findByIdAndDelete(assignmentId);
 
-      res.json({ success: true, message: "Assignment deleted successfully." });
+      res.json({
+        success: true,
+        message: "Assignment and related notifications deleted successfully.",
+      });
     } catch (err) {
       console.error("Error deleting assignment:", err);
       res.status(500).json({ message: "Internal server error." });
@@ -430,10 +452,18 @@ assignmentRoutes.post(
       }
 
       await assignment.save();
+      // ✅ Notify teacher
+      const teacherId = assignment.teacher;
+      await Notification.create({
+        title: `Assignment Submitted`,
+        message: `Student "${req.user.profile.firstName}" submitted assignment "${assignment.title}".`,
+        type: "assignment",
+        recipients: [teacherId],
+      });
 
       res.json({
         success: true,
-        message: "Assignment submitted successfully.",
+        message: "Assignment submitted successfully and teacher notified.",
       });
     } catch (err) {
       console.error("Error submitting assignment:", err);

@@ -4,6 +4,8 @@ import QuizAttempt from "../models/QuizAttempt.js";
 import User from "../models/user.model.js";
 import mongoose from "mongoose";
 import { authMiddleware } from "../middleware/authMiddleware.js";
+import Classs from "../models/class.model.js";
+import Notification from "../models/notification.model.js";
 const router = express.Router();
 
 /**
@@ -99,7 +101,7 @@ const router = express.Router();
 
 router.get("/student/quizzes", async (req, res) => {
   try {
-    console.log("hello");
+    console.log("Quiz started..");
     const { classId, section, subject, studentId } = req.query;
 
     // Step 1: Validate inputs
@@ -160,7 +162,7 @@ router.get("/student/quizzes", async (req, res) => {
  * Submit answers for grading and save the QuizAttempt
  * Expected req.body: { studentId, classId, section, subject, answers: [{ mcqId, selectedOption }] }
  */
-router.post("/student/submit", async (req, res) => {
+router.post("/student/submit", authMiddleware, async (req, res) => {
   try {
     const { studentId, classId, section, subject, answers } = req.body;
 
@@ -227,12 +229,23 @@ router.post("/student/submit", async (req, res) => {
     });
     await quizAttempt.save();
 
+    // ✅ Send notification to teacher
+    const classData = await Classs.findById(classId); // Assuming Class model has teacher field
+    if (classData && classData.teacher) {
+      await Notification.create({
+        title: "Quiz Submitted",
+        message: `Student "${req.user.profile.firstName}" submitted their quiz in ${subject}.`,
+        type: "mcq", // or "quiz" if you prefer
+        recipients: [classData.teacher],
+      });
+    }
+
     res.json({
       success: true,
-      message: "Quiz submitted successfully.",
+      message: "Quiz submitted successfully and teacher notified.",
       score,
       totalQuestions: mcqs.length,
-      correctAnswers: correctCount, // Send it in response too
+      correctAnswers: correctCount,
       quizAttemptId: quizAttempt._id,
     });
   } catch (error) {
@@ -527,6 +540,79 @@ router.get("/all-mcqs", async (req, res) => {
       message: "Failed to fetch MCQs.",
       error: error.message,
     });
+  }
+});
+
+/**
+ * GET /mcq/student/view-details
+ * Get student's attempted quiz details for a specific class, section, and subject
+ * Query params: studentId, classId, section, subject
+ */
+router.get("/student/view-details", async (req, res) => {
+  try {
+    const { studentId, classId, section, subject } = req.query;
+    console.log(studentId, classId, section, subject);
+    if (!studentId || !classId || !section || !subject) {
+      return res.status(400).json({
+        success: false,
+        message: "studentId, classId, section, and subject are required.",
+      });
+    }
+
+    // Validate ObjectIds
+    if (
+      !mongoose.Types.ObjectId.isValid(studentId) ||
+      !mongoose.Types.ObjectId.isValid(classId)
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid studentId or classId." });
+    }
+
+    // Find the quiz attempt for this student and class/section/subject
+    const quizAttempt = await QuizAttempt.findOne({
+      student: studentId,
+      class: classId,
+      section: section.trim(),
+      subject: subject.trim(),
+    }).populate({
+      path: "mcqs.mcqId",
+      model: "MCQ",
+      select: "_id question options correct_answer", // fetch question and options
+    });
+
+    if (!quizAttempt) {
+      return res.status(404).json({
+        success: false,
+        message: "No quiz attempt found for this class/section/subject.",
+      });
+    }
+
+    // Format the response to show question, options, and selected answer
+    const detailedQuiz = quizAttempt.mcqs.map((item) => ({
+      questionId: item.mcqId._id,
+      question: item.mcqId.question,
+      options: item.mcqId.options,
+      correctAnswer: item.mcqId.correct_answer,
+      selectedOption: item.selectedOption,
+      isCorrect: item.isCorrect,
+    }));
+
+    res.json({
+      success: true,
+      studentId,
+      classId,
+      section,
+      subject,
+      score: quizAttempt.score,
+      totalQuestions: quizAttempt.mcqs.length,
+      correctAnswers: quizAttempt.correctAnswers,
+      quizDetails: detailedQuiz,
+      submittedAt: quizAttempt.submittedAt,
+    });
+  } catch (error) {
+    console.error("[ERROR] /student/view-details", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 

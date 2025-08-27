@@ -9,7 +9,6 @@ import {
   BookOpen,
   Users,
   ChevronRight,
-  UserIcon,
   CheckCircle,
   XCircle,
 } from "lucide-react";
@@ -25,7 +24,7 @@ export default function MainMCQ({ user }) {
     try {
       setLoading(true);
       setError(null);
-      // Now your API must accept studentId and return alreadyAttempted flag per class
+      // API should return enrolledClasses with alreadyAttempted & hasQuizzes flags
       const data = await apiService.getClassesWithQuizzes(user._id);
       setEnrolledClasses(data.enrolledClasses);
     } catch (err) {
@@ -129,15 +128,24 @@ export default function MainMCQ({ user }) {
                       <Users className="w-4 h-4 mr-2 text-gray-500" />
                       <span>{classItem.totalStudents} students</span>
                     </div>
-                    {/* Add other info here */}
                   </div>
 
                   <div className="mt-6 pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
-                    <Button className="flex-grow bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl py-2.5">
+                    {/* Show View Details only if quiz was attempted */}
+
+                    <Button
+                      onClick={() =>
+                        navigate(
+                          `/quiz/details?studentId=${user._id}&classId=${classItem.classId}&section=${classItem.section}&subject=${classItem.subject}`
+                        )
+                      }
+                      className="flex-grow bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl py-2.5"
+                    >
                       View Details
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
 
+                    {/* Start Quiz button */}
                     {classItem.hasQuizzes && (
                       <Button
                         onClick={() =>
@@ -146,7 +154,7 @@ export default function MainMCQ({ user }) {
                             { state: { userId: user._id } }
                           )
                         }
-                        disabled={classItem.alreadyAttempted} // disable if already attempted
+                        disabled={classItem.alreadyAttempted}
                         className={`flex-grow rounded-xl py-2.5 text-white ${
                           classItem.alreadyAttempted
                             ? "bg-gray-400 cursor-not-allowed"

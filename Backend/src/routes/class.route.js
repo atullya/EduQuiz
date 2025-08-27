@@ -1,6 +1,7 @@
 import express from "express";
 import Classs from "../models/class.model.js";
 import User from "../models/user.model.js";
+import Assignment from "../models/assignmnet.model.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import moment from "moment";
 import MCQ from "../models/MCQ.js";
@@ -27,6 +28,27 @@ classRoutes.get("/", authMiddleware, async (req, res) => {
   }
 });
 
+// GET all available classes
+classRoutes.get("/classes/admin", async (req, res) => {
+  try {
+    const classes = await Classs.find()
+      .populate("teacher", "name email") // populate teacher with name and email
+      .populate("students", "name email"); // populate students with name and email
+
+    res.status(200).json({
+      success: true,
+      count: classes.length,
+      data: classes,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching classes",
+      error: error.message,
+    });
+  }
+});
+
 // CREATE class (admin only)
 // Assuming you're using moment for time parsing
 //only class
@@ -42,20 +64,17 @@ classRoutes.post("/onlyclass", authMiddleware, async (req, res) => {
       });
     }
 
-    // 1. Check if a class with the same name + subjects + schedule exists
+    // 1. Check if a class with the same name + grade + section already exists
     const existingClass = await Classs.findOne({
       name,
-      section,
       grade,
-      subjects: { $all: subjects, $size: subjects.length }, // exact subject match (1 subject)
-      schedule: { $all: schedule, $size: schedule.length }, // exact schedule match
+      section,
     });
 
     if (existingClass) {
       return res.status(400).json({
         success: false,
-        message:
-          "A class with the same name, subject, and schedule already exists.",
+        message: `A class with grade: ${grade}, section: ${section}, and name: "${name}" already exists.`,
       });
     }
 
@@ -66,8 +85,17 @@ classRoutes.post("/onlyclass", authMiddleware, async (req, res) => {
     // 3. Return success response
     return res.status(201).json({ success: true, data: savedClass });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
+    console.error("Error creating class:", error);
+
+    // Handle Mongo duplicate key error (if schema index is set)
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: `Duplicate class detected: grade: ${error.keyValue.grade}, section: ${error.keyValue.section}, name: ${error.keyValue.name}`,
+      });
+    }
+
+    return res.status(500).json({
       success: false,
       message: "Failed to create class. Please try again.",
     });
@@ -187,6 +215,7 @@ classRoutes.put("/:id", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Class not found" });
     }
 
+    // Assign teacher if needed
     if (assignNewTeacher) {
       const newTeacher = await User.findOne({
         _id: assignNewTeacher,
@@ -208,34 +237,58 @@ classRoutes.put("/:id", authMiddleware, async (req, res) => {
       classData.teacher = teacher;
     }
 
+    // Add students with validation
     if (students) {
+      // 1. Validate all student IDs
       const validStudents = await User.find({
         _id: { $in: students },
         role: "student",
       });
+
       if (students.length !== validStudents.length) {
         return res
           .status(400)
           .json({ message: "One or more student IDs are invalid" });
       }
 
+      // 2. Check if any student is already assigned to another class with same grade + section
+      for (const studentId of students) {
+        const alreadyAssigned = await Classs.findOne({
+          _id: { $ne: classData._id }, // exclude current class
+          grade: classData.grade,
+          section: classData.section,
+          students: studentId,
+        });
+
+        if (alreadyAssigned) {
+          const studentInfo = await User.findById(studentId);
+          return res.status(400).json({
+            message: `Student ${studentInfo.profile.firstName} ${studentInfo.profile.lastName} is already assigned to another class in grade ${classData.grade} section ${classData.section}`,
+          });
+        }
+      }
+
+      // 3. Add new students
       const existingIds = classData.students.map((id) => id.toString());
       const newIds = students.filter((id) => !existingIds.includes(id));
       classData.students.push(...newIds);
     }
 
+    // Remove students if needed
     if (removeStudents) {
       classData.students = classData.students.filter(
         (id) => !removeStudents.includes(id.toString())
       );
     }
 
+    // Remove subjects if needed
     if (removeSubjects) {
       classData.subjects = classData.subjects.filter(
         (subject) => !removeSubjects.includes(subject)
       );
     }
 
+    // Update other fields
     Object.keys(otherFields).forEach((field) => {
       classData[field] = otherFields[field];
     });
@@ -255,6 +308,7 @@ classRoutes.put("/:id", authMiddleware, async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 });
+
 // PUT /api/classes/:id/edit
 classRoutes.put("/:id/edit", authMiddleware, async (req, res) => {
   if (req.user.role !== "admin") {
@@ -456,6 +510,92 @@ classRoutes.get(
   }
 );
 
+//student stats route
+classRoutes.get(
+  "/student-stats/:studentId",
+  authMiddleware,
+  async (req, res) => {
+    const { studentId } = req.params;
+
+    // Authorization
+    if (
+      req.user.role !== "admin" &&
+      !(req.user.role === "student" && req.user._id.toString() === studentId)
+    ) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      // ✅ Get all classes student is enrolled in
+      const classes = await Classs.find({ students: studentId })
+        .populate("teacher", "profile.firstName profile.lastName email")
+        .populate("students", "_id username email");
+
+      const totalClasses = classes.length;
+
+      // ✅ Get all assignments for these classes
+      const classIds = classes.map((cls) => cls._id);
+
+      const allAssignments = await Assignment.find({
+        class: { $in: classIds },
+      });
+
+      const totalAssignments = allAssignments.length;
+
+      // ✅ Get all quizzes for these classes (assuming MCQ model has classId)
+      const allQuizzes = await MCQ.find({
+        classId: { $in: classIds },
+      });
+
+      const totalQuizzes = allQuizzes.length;
+
+      // ✅ Breakdown per class
+      const classInfo = await Promise.all(
+        classes.map(async (cls) => {
+          const assignmentCount = await Assignment.countDocuments({
+            class: cls._id,
+          });
+
+          const quizCount = await MCQ.countDocuments({
+            classId: cls._id,
+          });
+
+          return {
+            classId: cls._id,
+            className: cls.name,
+            section: cls.section,
+            grade: cls.grade,
+            roomNo: cls.roomNo,
+            subject: cls.subjects,
+            schedule: cls.schedule,
+            time: cls.time,
+            teacher: {
+              id: cls.teacher?._id || null,
+              name: `${cls.teacher?.profile?.firstName || ""} ${
+                cls.teacher?.profile?.lastName || ""
+              }`.trim(),
+              email: cls.teacher?.email || "N/A",
+            },
+            studentCount: cls.students.length,
+            assignmentCount,
+            quizCount,
+          };
+        })
+      );
+
+      res.json({
+        success: true,
+        totalClasses,
+        totalAssignments,
+        totalQuizzes,
+        enrolledClasses: classInfo,
+      });
+    } catch (err) {
+      console.error("[ERROR: /student-stats]", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
 classRoutes.get(
   "/student-stats/:studentId",
   authMiddleware,
@@ -472,7 +612,11 @@ classRoutes.get(
 
     try {
       const classes = await Classs.find({ students: studentId })
-        .populate("teacher", "_id name email role") // Get teacher info
+        .populate(
+          "teacher",
+          "_id profile.firstName profile.lastName email role"
+        )
+
         .populate("students", "_id username email"); // Optional: to show all classmates
 
       const totalClasses = classes.length;
@@ -489,7 +633,10 @@ classRoutes.get(
         totalStudents: cls.students.length,
         teacher: {
           id: cls.teacher?._id || null,
-          name: cls.teacher?.name || "Unknown",
+          name: cls.teacher
+            ? `${cls.teacher.profile.firstName} ${cls.teacher.profile.lastName}`
+            : "Unknown",
+
           email: cls.teacher?.email || "N/A",
         },
       }));
@@ -522,7 +669,10 @@ classRoutes.get(
     try {
       // Find all classes the student is enrolled in
       const classes = await Classs.find({ students: studentId })
-        .populate("teacher", "_id name email role")
+        .populate(
+          "teacher",
+          "username email profile.firstName profile.lastName"
+        )
         .populate("students", "_id username email");
 
       // For each class, check if MCQs exist
@@ -548,7 +698,9 @@ classRoutes.get(
             totalStudents: cls.students.length,
             teacher: {
               id: cls.teacher?._id || null,
-              name: cls.teacher?.name || "Unknown",
+              name: cls.teacher
+                ? `${cls.teacher.profile.firstName} ${cls.teacher.profile.lastName}`
+                : "Unknown",
               email: cls.teacher?.email || "N/A",
             },
             hasQuizzes: quizCount > 0,

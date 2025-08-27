@@ -5,9 +5,10 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import MCQ from "../models/MCQ.js";
-import Classs from "../models/class.model.js"; // Corrected import path based on your provided code
+// import Classs from "../models/class.model.js"; // Corrected import path based on your provided code
 import User from "../models/user.model.js"; // Corrected import path based on your provided code
-
+import Notification from "../models/notification.model.js";
+import Classs from "../models/class.model.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -112,7 +113,7 @@ router.post("/save-mcqs", async (req, res) => {
 
   try {
     // Validate class and teacher
-    const existingClass = await Classs.findById(classId);
+    const existingClass = await Classs.findById(classId).populate("students");
     if (!existingClass) {
       return res
         .status(404)
@@ -152,10 +153,23 @@ router.post("/save-mcqs", async (req, res) => {
       savedMCQs.push(newMCQ);
     }
 
+    // ✅ Create notification for students in the class
+    const studentIds = existingClass.students.map((s) => s._id);
+
+    const notification = new Notification({
+      title: `New MCQs in ${subject}`,
+      message: `Your teacher has added ${savedMCQs.length} new MCQs for class ${existingClass.grade} ${existingClass.section}.`,
+      type: "mcq",
+      recipients: studentIds,
+    });
+
+    await notification.save();
+
     res.status(201).json({
       success: true,
       message: "MCQs saved successfully!",
       savedCount: savedMCQs.length,
+      notificationId: notification._id,
     });
   } catch (error) {
     console.error("[ERROR IN /save-mcqs]", error);
@@ -251,6 +265,5 @@ router.post("/save-mcqs", async (req, res) => {
 */
 
 //try
-
 
 export default router;

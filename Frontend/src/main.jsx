@@ -10,6 +10,7 @@ import { AuthProvider } from "./contexts/AuthContexts.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import StudenDashboard from "./pages/Student/StudenDashboard.jsx";
 import StartQuiz from "./pages/Student/TakeMCQPage/StartQuiz.jsx";
+import StudentQuizDetails from "./pages/Student/TakeMCQPage/StudentQuizDetails.jsx";
 
 const allRoutes = createBrowserRouter([
   {
@@ -31,6 +32,10 @@ const allRoutes = createBrowserRouter([
   {
     path: "/quiz",
     element: <StartQuiz />,
+  },
+  {
+    path: "/quiz/details",
+    element: <StudentQuizDetails />,
   },
 ]);
 createRoot(document.getElementById("root")).render(

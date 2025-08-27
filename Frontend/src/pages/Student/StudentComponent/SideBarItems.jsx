@@ -31,9 +31,9 @@ const SideBarItems = ({ activeTab, setActiveTab }) => {
   const sidebarItems = [
     { id: "overview", label: "Overview", icon: Home },
     { id: "assignment", label: "Assignment", icon: GraduationCap },
-    { id: "teachers", label: "Teachers", icon: Users },
+    // { id: "teachers", label: "Teachers", icon: Users },
     { id: "classes", label: "Classes", icon: BookOpen },
-    { id: "quiz", label: "quiz", icon: FileText },
+    { id: "quiz", label: "Quiz", icon: FileText },
     // { id: "reports", label: "Reports", icon: BarChart3 },
     // { id: "system", label: "System", icon: Database },
     { id: "reports", label: "Reports", icon: BarChart3 },

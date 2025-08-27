@@ -73,12 +73,12 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
       const classesData = await apiService.getClassForAdmin();
       console.log("Classes fetched successfully:", classesData);
 
-      // Set the classes data
-      setClasses(classesData || []);
+      // Save only the array into state
+      setClasses(classesData?.data || []);
 
       // Extract unique grades
       const uniqueGrades = [
-        ...new Set(classesData?.map((cls) => cls.grade) || []),
+        ...new Set(classesData?.data?.map((cls) => cls.grade) || []),
       ];
       setAvailableGrades(uniqueGrades.sort());
     } catch (error) {
@@ -172,8 +172,8 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
       return setError("Phone number is required"), false;
     if (!formData.profile.class) return setError("Select a class"), false;
     if (!formData.profile.section) return setError("Select a section"), false;
-    if (!formData.profile.dateOfBirth)
-      return setError("Date of birth is required"), false;
+    // if (!formData.profile.dateOfBirth)
+    //   return setError("Date of birth is required"), false;
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -303,89 +303,87 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
               </div>
             </div>
 
-<div className="grid grid-cols-2 gap-4">
-  
-
-            <div>
-              <Label className="text-sm font-medium text-gray-700">
-                Email Address *
-              </Label>
-              <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="student@school.edu"
-                  disabled={isSubmitting}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium text-gray-700">
-                Phone Number *
-              </Label>
-              <div className="relative mt-1">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  name="profile.phone"
-                  value={formData.profile.phone}
-                  onChange={handleInputChange}
-                  placeholder="1234567890"
-                  disabled={isSubmitting}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-</div>
-
-<div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-700">
-                Date of Birth *
-              </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Email Address *
+                </Label>
+                <div className="relative mt-1">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="student@school.edu"
                     disabled={isSubmitting}
-                    className="w-full justify-start text-left font-normal mt-1 bg-transparent"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.profile.dateOfBirth
-                      ? format(formData.profile.dateOfBirth, "PPP")
-                      : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.profile.dateOfBirth}
-                    onSelect={handleDateSelect}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
+                    className="pl-10"
                   />
-                </PopoverContent>
-              </Popover>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Phone Number *
+                </Label>
+                <div className="relative mt-1">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    name="profile.phone"
+                    value={formData.profile.phone}
+                    onChange={handleInputChange}
+                    placeholder="1234567890"
+                    disabled={isSubmitting}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div>
-              <Label className="text-sm font-medium text-gray-700">
-                Address
-              </Label>
-              <Input
-                name="profile.address"
-                value={formData.profile.address}
-                onChange={handleInputChange}
-                placeholder="Enter full address"
-                disabled={isSubmitting}
-                className="mt-1"
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {/* <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Date of Birth *
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isSubmitting}
+                      className="w-full justify-start text-left font-normal mt-1 bg-transparent"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.profile.dateOfBirth
+                        ? format(formData.profile.dateOfBirth, "PPP")
+                        : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formData.profile.dateOfBirth}
+                      onSelect={handleDateSelect}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div> */}
+
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Address
+                </Label>
+                <Input
+                  name="profile.address"
+                  value={formData.profile.address}
+                  onChange={handleInputChange}
+                  placeholder="Enter full address"
+                  disabled={isSubmitting}
+                  className="mt-1"
+                />
+              </div>
             </div>
           </div>
 
@@ -394,52 +392,113 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
             <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
               Account Details
             </h3>
-<div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-700">
-                Username *
-              </Label>
-              <div className="flex gap-2 mt-1">
-                <Input
-                  name="username"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  placeholder="student.username"
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium text-gray-700">
-                Password *
-              </Label>
-              <div className="relative mt-1">
-                <Input
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="Enter secure password"
-                  disabled={isSubmitting}
-                  className="pr-10"
-                />
+            <div className="grid grid-cols-2 gap-4">
+              {/* <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Username *
+                </Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    placeholder="student.username"
+                    disabled={isSubmitting}
+                  />
+                </div>
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                  variant="outline"
+                  onClick={() => {
+                    if (
+                      formData.profile.firstName &&
+                      formData.profile.lastName
+                    ) {
+                      const generatedUsername = generateUsername();
+                      setFormData((prev) => ({
+                        ...prev,
+                        username: generatedUsername,
+                      }));
+                    }
+                  }}
+                  disabled={
+                    isSubmitting ||
+                    !formData.profile.firstName ||
+                    !formData.profile.lastName
+                  }
+                  className="whitespace-nowrap"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  Generate
                 </Button>
+              </div> */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Username *
+                </Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    placeholder="student.username"
+                    disabled={isSubmitting}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (
+                        formData.profile.firstName &&
+                        formData.profile.lastName
+                      ) {
+                        const generatedUsername = generateUsername();
+                        setFormData((prev) => ({
+                          ...prev,
+                          username: generatedUsername,
+                        }));
+                      }
+                    }}
+                    disabled={
+                      isSubmitting ||
+                      !formData.profile.firstName ||
+                      !formData.profile.lastName
+                    }
+                    className="whitespace-nowrap"
+                  >
+                    Generate
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Password *
+                </Label>
+                <div className="relative mt-1">
+                  <Input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="Enter secure password"
+                    disabled={isSubmitting}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
-</div>
           </div>
           {/* Academic Information */}
           <div className="space-y-4">
@@ -461,11 +520,13 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
                     <SelectValue placeholder="Select class" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableGrades.map((grade) => (
-                      <SelectItem key={grade} value={grade}>
-                        Grade {grade}
-                      </SelectItem>
-                    ))}
+                    {[...new Set(classes.map((cls) => cls.grade))].map(
+                      (grade) => (
+                        <SelectItem key={grade} value={grade}>
+                          {grade}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -490,9 +551,9 @@ const AddStudentModal = ({ open, onOpenChange, onStudentAdded }) => {
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    {sections.map((section) => (
-                      <SelectItem key={section} value={section}>
-                        Section {section}
+                    {classes.map((cls) => (
+                      <SelectItem key={cls._id} value={`${cls.section}`}>
+                        {cls.section}
                       </SelectItem>
                     ))}
                   </SelectContent>
