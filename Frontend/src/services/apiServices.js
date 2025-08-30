@@ -243,11 +243,15 @@ class ApiService {
     });
   }
   // New method for students to submit an assignment
-  submitAssignment(assignmentId, submissionText) {
+  submitAssignment(assignmentId, formData) {
     return this.request({
       url: `/assignment/student/submit-assignment/${assignmentId}`,
       method: "POST",
-      data: { submissionText },
+      data: formData,
+      headers:
+        formData instanceof FormData
+          ? { "Content-Type": "multipart/form-data" }
+          : {},
     });
   }
   deleteAssignedAssignment(assignmentID) {

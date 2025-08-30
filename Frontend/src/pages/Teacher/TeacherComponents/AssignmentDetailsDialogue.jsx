@@ -19,11 +19,76 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, CheckCircle, XCircle, User, Eye } from "lucide-react"; // Import Eye icon
+import { Loader2, CheckCircle, XCircle, User, Eye } from "lucide-react";
 import { apiService } from "../../../services/apiServices";
 import { format } from "date-fns";
-import SubmissionViewDialogue from "./SubmissionViewDialogue"; // Import the new submission view dialog
 
+// ----- Submission View Dialog -----
+const SubmissionViewDialogue = ({
+  open,
+  onOpenChange,
+  submissionText,
+  submissionFile,
+  studentName,
+  assignmentTitle,
+}) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Submission by {studentName}</DialogTitle>
+          <DialogDescription>
+            Assignment: <span className="font-semibold">{assignmentTitle}</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-grow space-y-4 overflow-y-auto py-4">
+          {/* Text Submission */}
+          {submissionText && submissionText.trim() && (
+            <div>
+              <h4 className="font-semibold text-sm mb-1">Text Submission:</h4>
+              <ScrollArea className="p-4 border rounded-md bg-gray-50 text-gray-800 whitespace-pre-wrap max-h-[200px]">
+                <p>{submissionText}</p>
+              </ScrollArea>
+            </div>
+          )}
+
+          {/* PDF Submission */}
+          {submissionFile && (
+            <div>
+              <h4 className="font-semibold text-sm mb-1">PDF Submission:</h4>
+              <div className="p-4 border rounded-md bg-green-50 flex justify-between items-center">
+                <span className="text-sm text-gray-700">
+                  📄 {submissionFile.split("/").pop()}
+                </span>
+                <Button
+                  size="sm"
+                  onClick={() => window.open(submissionFile, "_blank")}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Eye className="w-3 h-3 mr-1" />
+                  View PDF
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {!submissionText?.trim() && !submissionFile && (
+            <div className="p-8 text-center text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
+              <p>No submission content found.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end pt-4 border-t">
+          <Button onClick={() => onOpenChange(false)}>Close</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ----- Assignment Details Dialog -----
 const AssignmentDetailsDialogue = ({ open, onOpenChange, assignmentId }) => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +96,10 @@ const AssignmentDetailsDialogue = ({ open, onOpenChange, assignmentId }) => {
 
   const [isSubmissionViewOpen, setIsSubmissionViewOpen] = useState(false);
   const [currentSubmissionText, setCurrentSubmissionText] = useState("");
+  const [currentSubmissionFile, setCurrentSubmissionFile] = useState("");
   const [currentStudentName, setCurrentStudentName] = useState("");
+
+  const backendBaseUrl = "http://localhost:3000"; // Backend URL
 
   useEffect(() => {
     if (open && assignmentId) {
@@ -40,6 +108,15 @@ const AssignmentDetailsDialogue = ({ open, onOpenChange, assignmentId }) => {
         setError(null);
         try {
           const data = await apiService.getAssignmentSubmissions(assignmentId);
+
+          // Convert submissionFile to full backend URL
+          data.submissions = data.submissions.map((sub) => ({
+            ...sub,
+            submissionFile: sub.submissionFile
+              ? `${backendBaseUrl}${sub.submissionFile}`
+              : null,
+          }));
+
           setDetails(data);
         } catch (err) {
           console.error("Failed to fetch assignment details:", err);
@@ -50,13 +127,18 @@ const AssignmentDetailsDialogue = ({ open, onOpenChange, assignmentId }) => {
       };
       fetchDetails();
     } else {
-      setDetails(null); // Clear details when dialog closes
+      setDetails(null);
     }
   }, [open, assignmentId]);
 
-  const handleViewSubmissionClick = (submissionText, studentName) => {
-    setCurrentSubmissionText(submissionText);
-    setCurrentStudentName(studentName);
+  const handleViewSubmissionClick = (
+    submissionText,
+    submissionFile,
+    studentName
+  ) => {
+    setCurrentSubmissionText(submissionText || "");
+    setCurrentSubmissionFile(submissionFile || "");
+    setCurrentStudentName(studentName || "");
     setIsSubmissionViewOpen(true);
   };
 
@@ -88,6 +170,7 @@ const AssignmentDetailsDialogue = ({ open, onOpenChange, assignmentId }) => {
         ) : (
           <ScrollArea className="flex-grow pr-4 -mr-4">
             <div className="space-y-6 py-4">
+              {/* Summary */}
               <div className="grid grid-cols-2 gap-4 text-lg font-medium">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-600" />
@@ -105,6 +188,7 @@ const AssignmentDetailsDialogue = ({ open, onOpenChange, assignmentId }) => {
 
               <Separator />
 
+              {/* Submitted Students Table */}
               {details.submissions.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-xl font-semibold flex items-center gap-2">
@@ -115,57 +199,63 @@ const AssignmentDetailsDialogue = ({ open, onOpenChange, assignmentId }) => {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-gray-50">
-                          <TableHead className="w-[200px]">
-                            Student Name
-                          </TableHead>
+                          <TableHead>Student Name</TableHead>
                           <TableHead>Submitted At</TableHead>
                           <TableHead className="text-right">
                             Submission
-                          </TableHead>{" "}
-                          {/* New column */}
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {details.submissions.map((submission) => (
-                          <TableRow
-                            key={submission.student._id}
-                            className="hover:bg-green-50 transition-colors"
-                          >
-                            <TableCell className="font-semibold text-base py-3">
-                              {submission.student.profile?.firstName}{" "}
-                              {submission.student.profile?.lastName}
-                            </TableCell>
-                            <TableCell className="text-sm text-gray-600">
-                              {submission.submittedAt &&
-                                format(
-                                  new Date(submission.submittedAt),
-                                  "PPP p"
+                        {details.submissions.map((submission) => {
+                          const studentName = `${
+                            submission.student.profile?.firstName || ""
+                          } ${
+                            submission.student.profile?.lastName || ""
+                          }`.trim();
+                          return (
+                            <TableRow
+                              key={submission.student._id}
+                              className="hover:bg-green-50 transition-colors"
+                            >
+                              <TableCell className="font-semibold text-base py-3">
+                                {studentName}
+                              </TableCell>
+                              <TableCell className="text-sm text-gray-600">
+                                {submission.submittedAt &&
+                                  format(
+                                    new Date(submission.submittedAt),
+                                    "PPP p"
+                                  )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {(submission.submissionText ||
+                                  submission.submissionFile) && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleViewSubmissionClick(
+                                        submission.submissionText,
+                                        submission.submissionFile,
+                                        studentName
+                                      )
+                                    }
+                                  >
+                                    <Eye className="mr-2 h-4 w-4" /> View
+                                  </Button>
                                 )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handleViewSubmissionClick(
-                                    submission.submissionText,
-                                    `${submission.student.profile?.firstName} ${submission.student.profile?.lastName}`
-                                  )
-                                }
-                                disabled={!submission.submissionText} // Disable if no text
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                View
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
                 </div>
               )}
 
+              {/* Not Submitted Students Table */}
               {details.notSubmitted.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-xl font-semibold flex items-center gap-2">
@@ -176,9 +266,7 @@ const AssignmentDetailsDialogue = ({ open, onOpenChange, assignmentId }) => {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-gray-50">
-                          <TableHead className="w-[200px]">
-                            Student Name
-                          </TableHead>
+                          <TableHead>Student Name</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -201,6 +289,7 @@ const AssignmentDetailsDialogue = ({ open, onOpenChange, assignmentId }) => {
             </div>
           </ScrollArea>
         )}
+
         <div className="flex justify-end pt-4">
           <Button onClick={() => onOpenChange(false)}>Close</Button>
         </div>
@@ -211,6 +300,7 @@ const AssignmentDetailsDialogue = ({ open, onOpenChange, assignmentId }) => {
         open={isSubmissionViewOpen}
         onOpenChange={setIsSubmissionViewOpen}
         submissionText={currentSubmissionText}
+        submissionFile={currentSubmissionFile}
         studentName={currentStudentName}
         assignmentTitle={details?.assignmentTitle}
       />

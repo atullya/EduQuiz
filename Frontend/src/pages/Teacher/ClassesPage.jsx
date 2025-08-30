@@ -2,14 +2,13 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BookOpen, Users, Clock, MapPin, Plus } from "lucide-react";
 import {
-  BookOpen,
-  Users,
-  Clock,
-  MapPin,
-  Plus,
-} from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { apiService } from "../../services/apiServices";
 
 const ClassesPage = ({ user }) => {
@@ -77,27 +76,29 @@ const ClassesPage = ({ user }) => {
                         <Users className="w-4 h-4 mr-1" />
                         {classItem.studentCount} students
                       </div>
-                      <div className="flex items-center">
+                      {/* <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-1" />
                         {classItem.time}
-                      </div>
+                      </div> */}
                       <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-1" />
                         Room {classItem.roomNo}
                       </div>
-                      <div>
-                        📅 {classItem.schedule?.join(", ")}
-                      </div>
+                      <div>📅 {classItem.schedule?.join(", ")}</div>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex space-x-3">
-                  <Button variant="outline" className="h-10" onClick={() => handleViewStudents(classItem.classId)}>
+                  <Button
+                    variant="outline"
+                    className="h-10"
+                    onClick={() => handleViewStudents(classItem.classId)}
+                  >
                     <Users className="mr-2 h-4 w-4" />
                     View Students
                   </Button>
-                  <Button className="h-10">Manage Class</Button>
+                  {/* <Button className="h-10">Manage Class</Button> */}
                 </div>
               </div>
             </CardContent>
@@ -108,8 +109,12 @@ const ClassesPage = ({ user }) => {
           <Card className="border-2 border-dashed border-gray-300">
             <CardContent className="p-12 text-center">
               <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Classes Yet</h3>
-              <p className="text-gray-600 mb-4">You haven't been assigned any classes yet.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Classes Yet
+              </h3>
+              <p className="text-gray-600 mb-4">
+                You haven't been assigned any classes yet.
+              </p>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Request Class Assignment

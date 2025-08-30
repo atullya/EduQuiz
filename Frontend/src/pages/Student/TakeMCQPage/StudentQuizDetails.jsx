@@ -26,7 +26,9 @@ const StudentQuizDetails = () => {
   useEffect(() => {
     const fetchQuizDetails = async () => {
       if (!studentId || !classId || !section || !subject) {
-        setError("Missing required parameters. Please access via class list page.");
+        setError(
+          "Missing required parameters. Please access via class list page."
+        );
         setLoading(false);
         return;
       }
@@ -34,7 +36,7 @@ const StudentQuizDetails = () => {
       try {
         setLoading(true);
         const res = await axios.get(
-          "http://localhost:3000/api/mcq/student/view-details",
+          "http://localhost:3000/api/smcq/student/view-details",
           {
             params: { studentId, classId, section, subject },
           }
@@ -51,7 +53,9 @@ const StudentQuizDetails = () => {
       } catch (err) {
         console.error(err);
         if (err.response && err.response.status === 404) {
-          setError("You haven't attempted this quiz yet. Please attempt it first.");
+          setError(
+            "You haven't attempted this quiz yet. Please attempt it first."
+          );
         } else {
           setError("Failed to fetch quiz details.");
         }
@@ -70,7 +74,10 @@ const StudentQuizDetails = () => {
     <div className="p-6 max-w-3xl mx-auto">
       {error ? (
         <div className="mb-6">
-          <Alert variant="destructive" className="flex flex-col items-center text-center">
+          <Alert
+            variant="destructive"
+            className="flex flex-col items-center text-center"
+          >
             <AlertTitle className="text-lg font-semibold">Error</AlertTitle>
             <AlertDescription className="mb-4">{error}</AlertDescription>
             <Button
@@ -85,7 +92,8 @@ const StudentQuizDetails = () => {
         <>
           <h2 className="text-2xl font-bold mb-4">Quiz Details: {subject}</h2>
           <p className="mb-4">
-            Score: {score.toFixed(2)}% | Correct Answers: {correctAnswers} / {totalQuestions}
+            Score: {score.toFixed(2)}% | Correct Answers: {correctAnswers} /{" "}
+            {totalQuestions}
           </p>
 
           {quizDetails.map((q, idx) => (
@@ -111,7 +119,8 @@ const StudentQuizDetails = () => {
                             : ""
                         }`}
                       >
-                        <span className="font-medium">{opt.key}.</span> {opt.value}
+                        <span className="font-medium">{opt.key}.</span>{" "}
+                        {opt.value}
                       </Label>
                     </div>
                   ))}

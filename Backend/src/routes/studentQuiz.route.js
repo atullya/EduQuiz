@@ -321,7 +321,10 @@ router.get("/student/progress/:studentId", async (req, res) => {
     const { studentId } = req.params;
 
     // Get all attempts by the student, no filter on class/section/subject
-    const attempts = await QuizAttempt.find({ student: studentId });
+    const attempts = await QuizAttempt.find({ student: studentId }).populate(
+      "class",
+      "name section grade"
+    );
 
     if (attempts.length === 0) {
       return res.json({

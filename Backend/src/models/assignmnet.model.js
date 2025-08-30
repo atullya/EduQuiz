@@ -16,8 +16,8 @@ const assignmentSchema = new mongoose.Schema({
     {
       student: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       submissionText: String,
+      submissionFile: String, // store PDF path or URL
       submittedAt: { type: Date, default: Date.now },
-
       feedback: String,
     },
   ],

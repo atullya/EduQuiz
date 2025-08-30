@@ -96,7 +96,11 @@ const OverviewPage = ({ user, setActiveTab }) => {
               <Plus className="w-5 h-5 mr-2" />
               Create Assignment
             </Button>
-            <Button variant="outline" className="w-full h-12 text-lg">
+            <Button
+              variant="outline"
+              className="w-full h-12 text-lg"
+              onClick={() => setActiveTab("reports")}
+            >
               <BarChart3 className="w-5 h-5 mr-2" />
               View Reports
             </Button>

@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { Home, GraduationCap, Users, BookOpen, Settings } from "lucide-react"
+import { Home, GraduationCap, Users, BookOpen, Settings } from "lucide-react";
 
 const SideBarItems = ({ activeTab, setActiveTab }) => {
   const sidebarItems = [
@@ -8,8 +8,8 @@ const SideBarItems = ({ activeTab, setActiveTab }) => {
     { id: "students", label: "Students", icon: GraduationCap },
     { id: "teachers", label: "Teachers", icon: Users },
     { id: "classes", label: "Classes", icon: BookOpen },
-    { id: "settings", label: "Settings", icon: Settings },
-  ]
+    // { id: "settings", label: "Settings", icon: Settings },
+  ];
 
   return (
     <nav className="p-4 space-y-1">
@@ -28,7 +28,7 @@ const SideBarItems = ({ activeTab, setActiveTab }) => {
         </button>
       ))}
     </nav>
-  )
-}
+  );
+};
 
-export default SideBarItems
+export default SideBarItems;

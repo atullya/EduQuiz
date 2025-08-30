@@ -34,14 +34,16 @@ const Layout = ({ children }) => {
           sidebarOpen ? "lg:ml-64" : ""
         }`}
       >
-        <Topbar />
+        <Topbar user={user} />
         <main className="p-6">
           {/* Render content based on active tab */}
-          {activeTab === "overview" && <AdminOverview user={user} />}
+          {activeTab === "overview" && (
+            <AdminOverview user={user} setActiveTab={setActiveTab} />
+          )}
           {activeTab === "students" && <StudentSegment user={user} />}
           {activeTab === "teachers" && <TeacherSegment user={user} />}
           {activeTab === "classes" && <ClassSegment user={user} />}
-          {activeTab === "settings" && (
+          {/* {activeTab === "settings" && (
             <div className="text-center py-12">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
                 Settings
@@ -50,7 +52,7 @@ const Layout = ({ children }) => {
                 Settings content will be displayed here
               </p>
             </div>
-          )}
+          )} */}
         </main>
       </div>
     </div>

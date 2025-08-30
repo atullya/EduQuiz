@@ -132,18 +132,19 @@ export default function MainMCQ({ user }) {
 
                   <div className="mt-6 pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
                     {/* Show View Details only if quiz was attempted */}
-
-                    <Button
-                      onClick={() =>
-                        navigate(
-                          `/quiz/details?studentId=${user._id}&classId=${classItem.classId}&section=${classItem.section}&subject=${classItem.subject}`
-                        )
-                      }
-                      className="flex-grow bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl py-2.5"
-                    >
-                      View Details
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    {classItem.hasQuizzes ? (
+                      <Button
+                        onClick={() =>
+                          navigate(
+                            `/quiz/details?studentId=${user._id}&classId=${classItem.classId}&section=${classItem.section}&subject=${classItem.subject}`
+                          )
+                        }
+                        className="flex-grow bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl py-2.5"
+                      >
+                        View Details
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    ) : null}
 
                     {/* Start Quiz button */}
                     {classItem.hasQuizzes && (

@@ -38,7 +38,6 @@ const TeacherDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* <Layout></Layout> */}
       <Layout />
-      asdf
     </div>
   );
 };

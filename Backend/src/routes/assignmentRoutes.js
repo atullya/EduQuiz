@@ -5,7 +5,7 @@ import User from "../models/user.model.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import Notification from "../models/notification.model.js";
 const assignmentRoutes = express.Router();
-
+import upload from "../middleware/upload.js";
 // ✅ CREATE assignment
 assignmentRoutes.post("/create", authMiddleware, async (req, res) => {
   if (req.user.role !== "teacher") {
@@ -313,6 +313,7 @@ assignmentRoutes.get(
           .json({ message: "Only students can access this endpoint." });
       }
 
+      // Get student's class and section
       const studentUser = await User.findById(req.user._id)
         .select("profile.class profile.section")
         .lean();
@@ -329,10 +330,8 @@ assignmentRoutes.get(
         });
       }
 
-      const studentGrade = studentUser.profile.class; // or Number(studentUser.profile.class)
-      const studentSection = studentUser.profile.section;
-
-      console.log("Looking for class with:", { studentGrade, studentSection });
+      const { class: studentGrade, section: studentSection } =
+        studentUser.profile;
 
       const studentClassDoc = await Classs.findOne({
         grade: studentGrade,
@@ -340,8 +339,6 @@ assignmentRoutes.get(
       })
         .select("_id")
         .lean();
-
-      console.log("Matched class document:", studentClassDoc);
 
       if (!studentClassDoc) {
         return res.status(404).json({
@@ -351,6 +348,7 @@ assignmentRoutes.get(
 
       const studentClassId = studentClassDoc._id;
 
+      // Get assignments for student's class
       const assignments = await Assignment.find({ class: studentClassId })
         .populate(
           "teacher",
@@ -370,23 +368,29 @@ assignmentRoutes.get(
           description: assignment.description,
           subject: assignment.subject,
           dueDate: assignment.dueDate,
-          priority: assignment.priority,
-          class: {
-            _id: assignment.class._id,
-            name: assignment.class.name,
-            grade: assignment.class.grade,
-            section: assignment.class.section,
-          },
-          teacher: {
-            _id: assignment.teacher._id,
-            firstName: assignment.teacher.profile?.firstName,
-            lastName: assignment.teacher.profile?.lastName,
-          },
+          priority: assignment.priority || null,
+          class: assignment.class
+            ? {
+                _id: assignment.class._id,
+                name: assignment.class.name,
+                grade: assignment.class.grade,
+                section: assignment.class.section,
+              }
+            : null,
+          teacher: assignment.teacher
+            ? {
+                _id: assignment.teacher._id,
+                firstName: assignment.teacher.profile?.firstName || "",
+                lastName: assignment.teacher.profile?.lastName || "",
+              }
+            : null,
           isSubmitted: !!studentSubmission,
           submission: studentSubmission
             ? {
                 submittedAt: studentSubmission.submittedAt,
-                submissionText: studentSubmission.submissionText,
+                submissionText: studentSubmission.submissionText || "",
+                submissionFile: studentSubmission.submissionFile || null,
+                feedback: studentSubmission.feedback || null,
               }
             : null,
         };
@@ -407,6 +411,7 @@ assignmentRoutes.get(
 assignmentRoutes.post(
   "/student/submit-assignment/:assignmentId",
   authMiddleware,
+  upload.single("file"), // multer middleware
   async (req, res) => {
     try {
       if (req.user.role !== "student") {
@@ -416,54 +421,59 @@ assignmentRoutes.post(
       }
 
       const { assignmentId } = req.params;
-      const { submissionText } = req.body;
       const studentId = req.user._id;
 
-      if (!submissionText) {
-        return res
-          .status(400)
-          .json({ message: "Submission text is required." });
+      // Handle submissionText safely
+      let submissionText = "";
+      if (typeof req.body.submissionText === "string") {
+        submissionText = req.body.submissionText;
+      } else if (typeof req.body.submissionText === "object") {
+        submissionText = JSON.stringify(req.body.submissionText);
+      }
+
+      // File handling
+      let fileUrl = null;
+      let fileName = null; // store original filename
+      if (req.file) {
+        fileUrl = `/uploads/assignments/${req.file.filename}`;
+        fileName = req.file.originalname;
       }
 
       const assignment = await Assignment.findById(assignmentId);
-
       if (!assignment) {
         return res.status(404).json({ message: "Assignment not found." });
       }
 
-      // Check if student has already submitted
-      const existingSubmissionIndex = assignment.submissions.findIndex(
-        (sub) => sub.student.toString() === studentId.toString()
+      // Check if student already submitted
+      const existingIndex = assignment.submissions.findIndex(
+        (s) => s.student.toString() === studentId.toString()
       );
 
-      if (existingSubmissionIndex > -1) {
-        // Update existing submission
-        assignment.submissions[existingSubmissionIndex].submissionText =
-          submissionText;
-        assignment.submissions[existingSubmissionIndex].submittedAt =
-          new Date();
+      if (existingIndex > -1) {
+        assignment.submissions[existingIndex].submissionText =
+          submissionText || null;
+        if (fileUrl) {
+          assignment.submissions[existingIndex].submissionFile = fileUrl;
+          assignment.submissions[existingIndex].fileName = fileName;
+        }
+        assignment.submissions[existingIndex].submittedAt = new Date();
       } else {
-        // Add new submission
         assignment.submissions.push({
           student: studentId,
-          submissionText,
+          submissionText: submissionText || null,
+          submissionFile: fileUrl,
+          fileName: fileName,
           submittedAt: new Date(),
         });
       }
 
       await assignment.save();
-      // ✅ Notify teacher
-      const teacherId = assignment.teacher;
-      await Notification.create({
-        title: `Assignment Submitted`,
-        message: `Student "${req.user.profile.firstName}" submitted assignment "${assignment.title}".`,
-        type: "assignment",
-        recipients: [teacherId],
-      });
 
       res.json({
         success: true,
-        message: "Assignment submitted successfully and teacher notified.",
+        message: "Assignment submitted successfully.",
+        submissionFile: fileUrl,
+        submissionFileName: fileName,
       });
     } catch (err) {
       console.error("Error submitting assignment:", err);
@@ -473,6 +483,7 @@ assignmentRoutes.post(
     }
   }
 );
+
 assignmentRoutes.post(
   "/submit/:assignmentId",
   authMiddleware,
@@ -570,7 +581,16 @@ assignmentRoutes.get(
       );
       const allStudents = assignment.class.students;
 
-      const submissions = assignment.submissions;
+      // Map submissions to include original filename
+      const submissions = assignment.submissions.map((sub) => ({
+        student: sub.student,
+        submissionText: sub.submissionText,
+        submissionFile: sub.submissionFile,
+        fileName: sub.fileName, // <--- added original file name
+        submittedAt: sub.submittedAt,
+        feedback: sub.feedback,
+      }));
+
       const notSubmitted = allStudents.filter(
         (student) => !submittedStudentIds.includes(student._id.toString())
       );
@@ -580,7 +600,7 @@ assignmentRoutes.get(
         totalStudents: allStudents.length,
         submittedCount: submissions.length,
         submissions,
-        notSubmitted: notSubmitted,
+        notSubmitted,
       });
     } catch (err) {
       console.error("Error getting assignment submissions:", err);

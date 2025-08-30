@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText, Upload } from "lucide-react";
 import { apiService } from "../../../services/apiServices";
 
 const SubmitAssignmentDialogue = ({
@@ -22,36 +22,77 @@ const SubmitAssignmentDialogue = ({
   onSubmissionSuccess,
 }) => {
   const [submissionText, setSubmissionText] = useState("");
+  const [file, setFile] = useState(null);
+  const [submissionType, setSubmissionType] = useState("text");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [existingPdfName, setExistingPdfName] = useState("");
 
   useEffect(() => {
     if (open && assignment) {
-      // Pre-fill with existing submission if available
-      setSubmissionText(assignment.submission?.submissionText || "");
-      setError(null); // Clear previous errors
+      const submission = assignment.submission || {};
+      setSubmissionText(submission.submissionText || "");
+
+      if (submission.submissionFile && !submission.submissionText) {
+        setSubmissionType("pdf");
+        setExistingPdfName(submission.submissionFile.split("/").pop());
+      } else if (submission.submissionText && !submission.submissionFile) {
+        setSubmissionType("text");
+      } else if (submission.submissionText && submission.submissionFile) {
+        setSubmissionType("text");
+        setExistingPdfName(submission.submissionFile.split("/").pop());
+      }
+
+      setFile(null);
+      setError(null);
     }
   }, [open, assignment]);
 
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile && selectedFile.type !== "application/pdf") {
+      setError("Only PDF files are allowed.");
+      setFile(null);
+    } else {
+      setFile(selectedFile);
+      setExistingPdfName("");
+      setError(null);
+    }
+  };
+
   const handleSubmit = async () => {
+    if (submissionType === "text" && !submissionText.trim()) {
+      setError("Please provide submission text.");
+      return;
+    }
+    if (submissionType === "pdf" && !file && !existingPdfName) {
+      setError("Please upload a PDF file.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
+
     try {
-      const res = await apiService.submitAssignment(
-        assignment._id,
-        submissionText
+      const formData = new FormData();
+      formData.append(
+        "submissionText",
+        submissionType === "text" ? submissionText : ""
       );
+      if (submissionType === "pdf" && file) {
+        formData.append("file", file);
+      }
+
+      const res = await apiService.submitAssignment(assignment._id, formData);
+
       if (res.success) {
-        console.log("Assignment submitted successfully:", res.message);
-        onSubmissionSuccess(); // Callback to refresh the parent list
-        onOpenChange(false); // Close the dialog
+        onSubmissionSuccess();
+        onOpenChange(false);
       } else {
         setError(res.message || "Failed to submit assignment.");
-        console.error("Failed to submit assignment:", res.message);
       }
     } catch (err) {
       setError(err.message || "Error submitting assignment.");
-      console.error("Error submitting assignment:", err);
     } finally {
       setLoading(false);
     }
@@ -61,7 +102,7 @@ const SubmitAssignmentDialogue = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
+          <DialogTitle>
             {assignment?.isSubmitted ? "Edit Submission" : "Submit Assignment"}
           </DialogTitle>
           <DialogDescription>
@@ -70,34 +111,80 @@ const SubmitAssignmentDialogue = ({
               : `Submit your work for "${assignment?.title}".`}
           </DialogDescription>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="submissionText" className="text-base">
-              Your Submission
-            </Label>
-            <Textarea
-              id="submissionText"
-              value={submissionText}
-              onChange={(e) => setSubmissionText(e.target.value)}
-              placeholder="Type your assignment submission here..."
-              rows={10}
-              className="min-h-[150px]"
-              disabled={loading}
-            />
+          <div className="space-y-3">
+            <Label>Choose Submission Type</Label>
+            <div className="flex gap-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="submissionType"
+                  value="text"
+                  checked={submissionType === "text"}
+                  onChange={(e) => setSubmissionType(e.target.value)}
+                  disabled={loading}
+                />
+                <Label className="flex items-center cursor-pointer">
+                  <FileText className="w-4 h-4 mr-1" /> Text
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="submissionType"
+                  value="pdf"
+                  checked={submissionType === "pdf"}
+                  onChange={(e) => setSubmissionType(e.target.value)}
+                  disabled={loading}
+                />
+                <Label className="flex items-center cursor-pointer">
+                  <Upload className="w-4 h-4 mr-1" /> PDF
+                </Label>
+              </div>
+            </div>
           </div>
+
+          {submissionType === "text" && (
+            <div className="space-y-2">
+              <Label>Your Submission (Text)</Label>
+              <Textarea
+                value={submissionText}
+                onChange={(e) => setSubmissionText(e.target.value)}
+                rows={8}
+                disabled={loading}
+              />
+            </div>
+          )}
+
+          {submissionType === "pdf" && (
+            <div className="space-y-2">
+              <Label>Upload PDF File</Label>
+              {existingPdfName && !file && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  Current file: <span>{existingPdfName}</span>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileChange}
+                disabled={loading}
+              />
+              {file && <p>New file selected: {file.name}</p>}
+            </div>
+          )}
+
           {error && <p className="text-red-500 text-sm">{error}</p>}
         </div>
+
         <DialogFooter>
-          <Button type="button" onClick={handleSubmit} disabled={loading}>
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...
-              </>
-            ) : assignment?.isSubmitted ? (
-              "Update Submission"
-            ) : (
-              "Submit Assignment"
-            )}
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading
+              ? "Submitting..."
+              : assignment?.isSubmitted
+              ? "Update Submission"
+              : "Submit Assignment"}
           </Button>
         </DialogFooter>
       </DialogContent>
