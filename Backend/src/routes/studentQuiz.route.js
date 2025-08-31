@@ -181,42 +181,51 @@ router.post("/student/submit", authMiddleware, async (req, res) => {
         .json({ success: false, message: "Student not found" });
     }
 
-    // Fetch MCQs to validate answers and get options & correct_answer
+    // 🔹 Fetch MCQs by IDs provided in answers
     const mcqIds = answers.map((a) => a.mcqId);
     const mcqs = await MCQ.find({ _id: { $in: mcqIds } });
 
-    if (mcqs.length !== answers.length) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid MCQ IDs in answers" });
+    // If no MCQs found -> avoid NaN
+    if (mcqs.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No MCQs found. Quiz cannot be graded.",
+      });
     }
 
-    // Grade each answer
+    // 🔹 Grade each answer
     let correctCount = 0;
     const detailedAnswers = answers.map((ans) => {
       const mcq = mcqs.find((m) => m._id.toString() === ans.mcqId);
 
-      // Find selected option object inside MCQ options by option _id (ans.selectedOption)
+      if (!mcq) {
+        return {
+          mcqId: ans.mcqId,
+          selectedOption: ans.selectedOption || null,
+          correctAnswer: null,
+          isCorrect: false,
+        };
+      }
+
+      // Find selected option
       const selectedOptionObj = mcq.options.find(
         (o) => o._id.toString() === ans.selectedOption
       );
 
-      // Compare selected option's key to mcq.correct_answer
       const isCorrect = selectedOptionObj?.key === mcq.correct_answer;
-
       if (isCorrect) correctCount++;
 
       return {
         mcqId: mcq._id,
-        selectedOption: ans.selectedOption,
+        selectedOption: ans.selectedOption || null,
         correctAnswer: mcq.correct_answer,
         isCorrect,
       };
     });
 
-    const score = (correctCount / mcqs.length) * 100; // percent score
+    const score = mcqs.length > 0 ? (correctCount / mcqs.length) * 100 : 0; // ✅ Safe now
 
-    // Save QuizAttempt with correctAnswers
+    // 🔹 Save QuizAttempt
     const quizAttempt = new QuizAttempt({
       student: studentId,
       class: classId,
@@ -224,18 +233,18 @@ router.post("/student/submit", authMiddleware, async (req, res) => {
       subject,
       mcqs: detailedAnswers,
       score,
-      correctAnswers: correctCount, // Save correct answer count here
+      correctAnswers: correctCount,
       submittedAt: new Date(),
     });
     await quizAttempt.save();
 
-    // ✅ Send notification to teacher
-    const classData = await Classs.findById(classId); // Assuming Class model has teacher field
+    // 🔹 Notify Teacher
+    const classData = await Classs.findById(classId);
     if (classData && classData.teacher) {
       await Notification.create({
         title: "Quiz Submitted",
         message: `Student "${req.user.profile.firstName}" submitted their quiz in ${subject}.`,
-        type: "mcq", // or "quiz" if you prefer
+        type: "mcq",
         recipients: [classData.teacher],
       });
     }

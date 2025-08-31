@@ -124,14 +124,15 @@ const StartQuiz = () => {
       if (!confirmed) return;
     }
 
+    // 🔹 Always include all questions (even unanswered with null)
     const payload = {
       studentId: state?.userId,
       classId,
       section,
       subject,
-      answers: Object.entries(answers).map(([mcqId, selectedOption]) => ({
-        mcqId,
-        selectedOption,
+      answers: mcqs.map((q) => ({
+        mcqId: q._id,
+        selectedOption: answers[q._id] || null,
       })),
     };
 
@@ -139,22 +140,16 @@ const StartQuiz = () => {
       const res = await axios.post(
         "http://localhost:3000/api/smcq/student/submit",
         payload,
-        {
-          withCredentials: true, // 🔑 send cookies (JWT/session) with request
-        }
+        { withCredentials: true }
       );
+
       if (res.data.success) {
         alert(`✅ Quiz submitted!`);
-        if (window.history.length > 1) {
-          navigate("/studentDashboard"); // fallback page
-          // navigate(-1); // go back
-        } else {
-          navigate("/studentDashboard"); // fallback page
-        }
+        navigate("/studentDashboard");
       }
     } catch (err) {
       console.error("Submit error", err);
-      // alert("🚫 Error submitting quiz.");
+      alert("🚫 Error submitting quiz.");
     }
   };
 
