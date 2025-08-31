@@ -1,10 +1,21 @@
-"use client"
+"use client";
 
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
-const GenerationSettings = ({ formData, onSelectChange, onInputChange, isGenerating }) => {
+const GenerationSettings = ({
+  formData,
+  onSelectChange,
+  onInputChange,
+  isGenerating,
+}) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Existing Number of Questions Select */}
@@ -28,7 +39,18 @@ const GenerationSettings = ({ formData, onSelectChange, onInputChange, isGenerat
           </SelectContent>
         </Select>
       </div>
-
+      <div className="space-y-2">
+        <Label htmlFor="chapter">Chapter</Label>
+        <Input
+          id="chapter"
+          name="chapter"
+          type="text"
+          placeholder="Enter chapter name"
+          value={formData.chapter}
+          onChange={onInputChange}
+          disabled={isGenerating}
+        />
+      </div>
       {/* NEW: MCQ Duration Input */}
       <div className="space-y-2">
         <Label htmlFor="mcqDuration">MCQ Duration (minutes)</Label>
@@ -63,7 +85,7 @@ const GenerationSettings = ({ formData, onSelectChange, onInputChange, isGenerat
         </Select>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default GenerationSettings
+export default GenerationSettings;

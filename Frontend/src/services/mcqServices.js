@@ -26,7 +26,15 @@ class MCQService {
     return response.data.mcqs;
   }
 
-  async saveMCQs(mcqs, classId, section, teacherId, duration, subject) {
+  async saveMCQs(
+    mcqs,
+    classId,
+    section,
+    teacherId,
+    duration,
+    subject,
+    chapter
+  ) {
     try {
       const response = await axios.post(`${API_BASE_URL}/mcq/save-mcqs`, {
         mcqs,
@@ -35,6 +43,7 @@ class MCQService {
         teacherId,
         duration,
         subject,
+        chapter,
       });
       return response.data;
     } catch (error) {

@@ -25,10 +25,17 @@ const StartQuiz = () => {
   const classId = searchParams.get("classId");
   const section = searchParams.get("section");
   const subject = searchParams.get("subject");
+  const chapter = searchParams.get("chapter"); // ✅ Added chapter
 
   // Fetch quiz MCQs
   useEffect(() => {
     const fetchMCQs = async () => {
+      if (!classId || !section || !subject || !chapter || !state?.userId) {
+        setError("Missing required query parameters.");
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         const res = await axios.get(
@@ -38,33 +45,34 @@ const StartQuiz = () => {
               classId,
               section,
               subject,
+              chapter, // ✅ Send chapter
               studentId: state?.userId,
             },
           }
         );
 
         if (res.data.success) {
-          setMcqs(res.data.mcqs);
+          setMcqs(res.data.mcqs || []);
           setAlreadyAttempted(res.data.alreadyAttempted || false);
 
           if (res.data.mcqs.length > 0) {
-            const d = res.data.duration;
+            const d = res.data.duration || 0;
             setDuration(d);
             setTimeLeft(d * 60);
           }
         } else {
-          setError("Failed to load MCQs.");
+          setError(res.data.message || "Failed to load MCQs.");
         }
       } catch (err) {
-        setError("Failed to load quiz.");
         console.error(err);
+        setError("Failed to load quiz.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchMCQs();
-  }, [classId, section, subject, state?.userId]);
+  }, [classId, section, subject, chapter, state?.userId]);
 
   // Timer
   useEffect(() => {
@@ -124,12 +132,12 @@ const StartQuiz = () => {
       if (!confirmed) return;
     }
 
-    // 🔹 Always include all questions (even unanswered with null)
     const payload = {
       studentId: state?.userId,
       classId,
       section,
       subject,
+      chapter, // ✅ Include chapter
       answers: mcqs.map((q) => ({
         mcqId: q._id,
         selectedOption: answers[q._id] || null,
@@ -144,7 +152,7 @@ const StartQuiz = () => {
       );
 
       if (res.data.success) {
-        alert(`✅ Quiz submitted!`);
+        alert("✅ Quiz submitted!");
         navigate("/studentDashboard");
       }
     } catch (err) {
@@ -193,7 +201,7 @@ const StartQuiz = () => {
         <div className="space-y-6">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-xl font-bold">
-              Quiz: {subject} (Section {section})
+              Quiz: {subject} (Section {section}) - Chapter: {chapter}
             </h1>
             <div className="text-lg font-mono text-red-600">
               ⏳ {formatTime(timeLeft)}

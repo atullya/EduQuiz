@@ -19,6 +19,8 @@ const userSchema = new mongoose.Schema({
     subjects: [String],
     qualification: String,
   },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
   createdAt: { type: Date, default: Date.now },
 });
 const User = mongoose.model("User", userSchema);

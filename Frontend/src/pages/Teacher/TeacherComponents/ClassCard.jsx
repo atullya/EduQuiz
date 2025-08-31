@@ -1,9 +1,23 @@
-"use client"
-import { BookOpen, FileText, CheckCircle, XCircle, Trash2, Eye, List } from "lucide-react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+"use client";
+import {
+  BookOpen,
+  FileText,
+  CheckCircle,
+  XCircle,
+  Trash2,
+  Eye,
+  List,
+} from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
-export default function ClassCard({ classItem, handleDeleteClick, handleViewQuizzes, handleViewMCQs, isDeleting }) {
+export default function ClassCard({
+  classItem,
+  handleDeleteClick,
+  handleViewQuizzes,
+  handleViewMCQs,
+  isDeleting,
+}) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-4">
@@ -12,15 +26,25 @@ export default function ClassCard({ classItem, handleDeleteClick, handleViewQuiz
             <BookOpen className="w-6 h-6 text-blue-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">{classItem.className}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+              {classItem.className}
+            </h3>
             <div className="flex flex-wrap gap-2 text-sm">
               <span className="text-gray-600">Grade {classItem.grade}</span>
               <span className="text-gray-400">•</span>
               <span className="text-gray-600">Section {classItem.section}</span>
+              <span className="text-gray-600">
+                Chapter <span className="text-gray-400">•</span>{" "}
+                {classItem.chapter}
+              </span>
+
               {classItem.subject && (
                 <>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-blue-600 font-medium">{classItem.subject}</span>
+                  <span></span>
+                  {/* <span className="text-gray-400">•</span> */}
+                  <span className="text-blue-600 font-medium">
+                    {classItem.subject}
+                  </span>
                 </>
               )}
             </div>
@@ -44,13 +68,17 @@ export default function ClassCard({ classItem, handleDeleteClick, handleViewQuiz
               {classItem.statusBreakdown.published > 0 && (
                 <div className="flex items-center gap-1">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">{classItem.statusBreakdown.published} Published</span>
+                  <span className="text-sm text-gray-600">
+                    {classItem.statusBreakdown.published} Published
+                  </span>
                 </div>
               )}
               {classItem.statusBreakdown.draft > 0 && (
                 <div className="flex items-center gap-1">
                   <XCircle className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">{classItem.statusBreakdown.draft} Draft</span>
+                  <span className="text-sm text-gray-600">
+                    {classItem.statusBreakdown.draft} Draft
+                  </span>
                 </div>
               )}
             </div>
@@ -92,5 +120,5 @@ export default function ClassCard({ classItem, handleDeleteClick, handleViewQuiz
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

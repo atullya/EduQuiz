@@ -32,6 +32,7 @@ export default function StatsPage({ user }) {
       setLoading(true);
       setError(null);
       const data = await apiService.getMCQwithClasses(user?._id);
+      console.log("Fetched subjects with MCQs:", data);
       if (data.success) {
         setSubjectsWithMCQs(data.subjectsWithMCQs);
       } else {
@@ -44,13 +45,19 @@ export default function StatsPage({ user }) {
     }
   };
 
-  const fetchTeacherProgressDetails = async (classId, section, subject) => {
+  const fetchTeacherProgressDetails = async (
+    classId,
+    section,
+    subject,
+    chapter
+  ) => {
     setDialogLoading(true);
     setDialogError(null);
     try {
       const res = await axios.get(
-        `http://localhost:3000/api/smcq/teacher/progress?classId=${classId}&section=${section}&subject=${subject}`
+        `http://localhost:3000/api/smcq/teacher/progress?classId=${classId}&section=${section}&subject=${subject}&chapter=${chapter}`
       );
+      console.log("Progress data:", res.data);
       if (res.data.success) {
         setSelectedClassProgress(res.data.progress);
       } else {
@@ -63,12 +70,12 @@ export default function StatsPage({ user }) {
     }
   };
 
-  const fetchMCQs = async (classId, teacherId, subject) => {
+  const fetchMCQs = async (classId, teacherId, subject, chapter) => {
     setMcqsLoading(true);
     setMcqsError(null);
     try {
       const res = await axios.get(
-        `http://localhost:3000/api/smcq/all-mcqs?classId=${classId}&teacherId=${teacherId}&subject=${subject}`
+        `http://localhost:3000/api/smcq/all-mcqs?classId=${classId}&teacherId=${teacherId}&subject=${subject}&chapter=${chapter}`
       );
       if (res.data.success) {
         setMcqsData(res.data.mcqs);
@@ -92,7 +99,7 @@ export default function StatsPage({ user }) {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      const { classId, section, subject } = deleteTarget;
+      const { classId, section, subject, chapter } = deleteTarget;
       const res = await axios.delete(
         `http://localhost:3000/api/smcq/teacher/delete-mcqs`,
         {
@@ -101,6 +108,7 @@ export default function StatsPage({ user }) {
             classId,
             section,
             subject,
+            chapter,
           },
           withCredentials: true,
         }
@@ -123,14 +131,20 @@ export default function StatsPage({ user }) {
     fetchTeacherProgressDetails(
       classItem.classId,
       classItem.section,
-      classItem.subject
+      classItem.subject,
+      classItem.chapter
     );
   };
 
   const handleViewMCQs = (classItem) => {
     setSelectedClassForMCQs(classItem);
     setIsMCQModalOpen(true);
-    fetchMCQs(classItem.classId, user?._id, classItem.subject);
+    fetchMCQs(
+      classItem.classId,
+      user?._id,
+      classItem.subject,
+      classItem.chapter
+    );
   };
 
   useEffect(() => {
@@ -186,7 +200,7 @@ export default function StatsPage({ user }) {
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
             {subjectsWithMCQs.map((classItem) => (
               <ClassCard
-                key={`${classItem.classId}-${classItem.subject}`}
+                key={`${classItem.classId}-${classItem.subject}-${classItem.chapter}`}
                 classItem={classItem}
                 handleDeleteClick={handleDeleteClick}
                 handleViewQuizzes={handleViewQuizzes}

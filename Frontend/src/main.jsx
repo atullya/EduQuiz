@@ -11,6 +11,8 @@ import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import StudenDashboard from "./pages/Student/StudenDashboard.jsx";
 import StartQuiz from "./pages/Student/TakeMCQPage/StartQuiz.jsx";
 import StudentQuizDetails from "./pages/Student/TakeMCQPage/StudentQuizDetails.jsx";
+import AdminForgotPassword from "./pages/Admin/AdminForgotPassword.jsx";
+import AdminResetPassword from "./pages/Admin/AdminResetPassword.jsx";
 
 const allRoutes = createBrowserRouter([
   {
@@ -36,6 +38,14 @@ const allRoutes = createBrowserRouter([
   {
     path: "/quiz/details",
     element: <StudentQuizDetails />,
+  },
+  {
+    path: "/admin/forgot-password",
+    element: <AdminForgotPassword />,
+  },
+  {
+    path: "/admin/reset-password/:token",
+    element: <AdminResetPassword />,
   },
 ]);
 createRoot(document.getElementById("root")).render(

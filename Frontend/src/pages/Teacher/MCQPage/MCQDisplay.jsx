@@ -7,10 +7,15 @@ import { CheckCircle, Download, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const MCQDisplay = ({ mcqs, onExport, isExporting, hasExported }) => {
-  const [editableMCQs, setEditableMCQs] = useState(mcqs);
+  const [editableMCQs, setEditableMCQs] = useState([]);
 
+  // Always replace editableMCQs when mcqs prop changes
   useEffect(() => {
-    setEditableMCQs(mcqs);
+    if (mcqs && mcqs.length > 0) {
+      setEditableMCQs([...mcqs]);
+    } else {
+      setEditableMCQs([]);
+    }
   }, [mcqs]);
 
   const handleQuestionChange = (index, value) => {
@@ -49,7 +54,7 @@ const MCQDisplay = ({ mcqs, onExport, isExporting, hasExported }) => {
   };
 
   const handleExportClick = () => {
-    onExport(editableMCQs);
+    onExport([...editableMCQs]); // send a fresh copy
   };
 
   if (!editableMCQs || editableMCQs.length === 0) return null;

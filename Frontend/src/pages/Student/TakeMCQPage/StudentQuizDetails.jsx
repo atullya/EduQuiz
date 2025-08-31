@@ -15,6 +15,7 @@ const StudentQuizDetails = () => {
   const classId = searchParams.get("classId");
   const section = searchParams.get("section");
   const subject = searchParams.get("subject");
+  const chapter = searchParams.get("chapter");
 
   const [quizDetails, setQuizDetails] = useState([]);
   const [score, setScore] = useState(0);
@@ -25,7 +26,7 @@ const StudentQuizDetails = () => {
 
   useEffect(() => {
     const fetchQuizDetails = async () => {
-      if (!studentId || !classId || !section || !subject) {
+      if (!studentId || !classId || !section || !subject || !chapter) {
         setError(
           "Missing required parameters. Please access via class list page."
         );
@@ -38,7 +39,7 @@ const StudentQuizDetails = () => {
         const res = await axios.get(
           "http://localhost:3000/api/smcq/student/view-details",
           {
-            params: { studentId, classId, section, subject },
+            params: { studentId, classId, section, subject, chapter },
           }
         );
 

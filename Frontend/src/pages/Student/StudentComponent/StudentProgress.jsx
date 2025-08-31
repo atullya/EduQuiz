@@ -62,6 +62,16 @@ const StudentProgress = ({ studentId }) => {
       </div>
     );
   }
+  const formatChapter = (chapter) => {
+    // Convert to string and trim
+    let ch = chapter.toString().trim();
+
+    // Remove any existing "chapter" word (case-insensitive)
+    ch = ch.replace(/chapter\s*/i, "");
+
+    // Return with "Chapter X" format
+    return `Chapter ${ch}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10">
@@ -185,6 +195,9 @@ const StudentProgress = ({ studentId }) => {
                         <th className="py-3 px-4 font-semibold text-gray-700">
                           Subject
                         </th>
+                        <th className="py-3 px-4 font-semibold text-gray-700">
+                          Chapter
+                        </th>
                         <th className="py-3 px-4 text-right font-semibold text-gray-700">
                           Score
                         </th>
@@ -209,6 +222,9 @@ const StudentProgress = ({ studentId }) => {
                           </td>
                           <td className="py-3 px-4 text-gray-700">
                             {attempt.subject}
+                          </td>
+                          <td className="py-3 px-4 text-gray-700">
+                            {formatChapter(attempt.chapter)}
                           </td>
                           <td className="py-3 px-4 text-right">
                             <span

@@ -22,7 +22,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("1234567890");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -109,7 +109,7 @@ const LoginPage = () => {
             </div>
           </CardContent>
 
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="flex flex-col space-y-4 mt-6">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -121,7 +121,7 @@ const LoginPage = () => {
               )}
             </Button>
 
-            <div className="text-center text-sm text-gray-600">
+            {/* <div className="text-center text-sm text-gray-600">
               <p>Demo Accounts:</p>
               <div className="mt-2 space-y-1 text-xs">
                 <p>
@@ -134,7 +134,7 @@ const LoginPage = () => {
                   <strong>Student:</strong> ryan.student@example.com
                 </p>
               </div>
-            </div>
+            </div> */}
           </CardFooter>
         </form>
       </Card>
