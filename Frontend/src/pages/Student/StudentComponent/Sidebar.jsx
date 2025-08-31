@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import SideBarItems from "./SideBarItems";
 import { apiService } from "../../../services/apiServices";
+import StudentProfile from "./StudentProfile";
 let handleLogout = async () => {
   try {
     const res = await apiService.logout();
@@ -73,103 +74,10 @@ const Sidebar = ({
             <X className="h-4 w-4" />
           </Button>
         </div>
-
-        {/* Profile Section */}
-        <div className="p-6 border-b border-gray-200/50">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold">
-              {user?.username ? user.username.charAt(0).toUpperCase() : "?"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">
-                {/* {user?.profile?.firstName} {user?.profile?.lastName} */}
-                {user?.username || "Loading..."}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                Student Dashboard
-              </p>
-            </div>
-            {/* <Dialog
-                open={isEditDialogOpen}
-                onOpenChange={setIsEditDialogOpen}
-              >
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="rounded-full">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Edit Admin Profile</DialogTitle>
-                    <DialogDescription>
-                      Update your administrative information
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleProfileUpdate} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name</Label>
-                        <Input
-                          id="firstName"
-                          name="profile.firstName"
-                          value={profileData.profile.firstName}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input
-                          id="lastName"
-                          name="profile.lastName"
-                          value={profileData.profile.lastName}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={profileData.email}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        name="profile.phone"
-                        value={profileData.profile.phone}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                    {error && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{error}</AlertDescription>
-                      </Alert>
-                    )}
-                    <div className="flex gap-2">
-                      <Button
-                        type="submit"
-                        className="flex-1 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white"
-                      >
-                        Update Profile
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsEditDialogOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog> */}
-          </div>
+   <div className="px-2 py-4 border-b border-gray-100">
+          <StudentProfile user={user} />
         </div>
+      
         <SideBarItems activeTab={activeTab} setActiveTab={setActiveTab} />
         {/* Navigation */}
         {/* <nav className="flex-1 p-4 space-y-2">

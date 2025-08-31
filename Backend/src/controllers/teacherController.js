@@ -1,30 +1,38 @@
 import express from "express";
 import User from "../models/user.model.js";
-
+import bcrypt from "bcryptjs";
 export const teacherDashboard = (req, res) => {
   res.json({ message: "Welcome to the Teacher Dashboard", user: req.user });
 };
 
 export const updateTeacherProfile = async (req, res) => {
   try {
-    const teacherId = req.user?.id; // Or use req.params.id if it's in the URL
+    const teacherId = req.user?.id; // or req.params.id if you pass it in URL
 
     if (!teacherId) {
       return res.status(400).json({ error: "Teacher ID not provided." });
     }
 
+    // Prepare update object
+    const updateFields = {
+      email: req.body.email,
+      profile: {
+        firstName: req.body.profile.firstName,
+        lastName: req.body.profile.lastName,
+        phone: req.body.profile.phone,
+      },
+    };
+
+    // If password is provided, hash and include it
+    if (req.body.password) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(req.body.password, salt);
+      updateFields.password = hashedPassword;
+    }
+
     const updatedTeacher = await User.findByIdAndUpdate(
       teacherId,
-      {
-        $set: {
-          email: req.body.email,
-          profile: {
-            firstName: req.body.profile.firstName,
-            lastName: req.body.profile.lastName,
-            phone: req.body.profile.phone,
-          },
-        },
-      },
+      { $set: updateFields },
       { new: true }
     );
 

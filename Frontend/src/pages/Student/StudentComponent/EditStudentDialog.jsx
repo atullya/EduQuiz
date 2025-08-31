@@ -10,17 +10,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiService } from "../../../services/apiServices";
-import { User, Mail, Phone, Lock } from "lucide-react";
+import { User, Mail, Phone, Lock, IdCard, BookOpen, Users } from "lucide-react";
 
-const EditProfileDialog = ({ open, onOpenChange, teacherId, existingData }) => {
+const EditStudentDialog = ({ open, onOpenChange, studentId, existingData }) => {
   const [profileData, setProfileData] = useState({
     profile: {
       firstName: "",
       lastName: "",
       phone: "",
+      studentId: "",
+      class: "",
+      section: "",
     },
     email: "",
-    password: "", // NEW
+    password: "",
   });
 
   const [error, setError] = useState("");
@@ -32,12 +35,15 @@ const EditProfileDialog = ({ open, onOpenChange, teacherId, existingData }) => {
           firstName: existingData.profile?.firstName || "",
           lastName: existingData.profile?.lastName || "",
           phone: existingData.profile?.phone || "",
+          studentId: existingData.profile?.studentId || "",
+          class: existingData.profile?.class || "",
+          section: existingData.profile?.section || "",
         },
         email: existingData.email || "",
-        password: "", // always empty on load for security
+        password: "",
       });
     }
-  }, [open, teacherId]);
+  }, [open, studentId]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -62,8 +68,7 @@ const EditProfileDialog = ({ open, onOpenChange, teacherId, existingData }) => {
     e.preventDefault();
     setError("");
     try {
-      // send full object including password if entered
-      await apiService.updateTeacherProfile(teacherId, profileData);
+      await apiService.updateStudentProfile(studentId, profileData);
       alert("Profile updated successfully!");
       onOpenChange(false);
     } catch (err) {
@@ -77,14 +82,15 @@ const EditProfileDialog = ({ open, onOpenChange, teacherId, existingData }) => {
       <DialogContent className="max-w-md rounded-2xl shadow-2xl animate-fade-in">
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold text-gray-800">
-            Edit Profile
+            Edit Student Profile
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-500">
-            Make changes to your personal information here.
+            Update your personal and academic information here.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleProfileUpdate} className="space-y-6 pt-2">
+          {/* Name Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="firstName">First Name</Label>
@@ -100,7 +106,6 @@ const EditProfileDialog = ({ open, onOpenChange, teacherId, existingData }) => {
                 <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
             </div>
-
             <div>
               <Label htmlFor="lastName">Last Name</Label>
               <div className="relative">
@@ -117,6 +122,7 @@ const EditProfileDialog = ({ open, onOpenChange, teacherId, existingData }) => {
             </div>
           </div>
 
+          {/* Email */}
           <div>
             <Label htmlFor="email">Email</Label>
             <div className="relative">
@@ -126,13 +132,14 @@ const EditProfileDialog = ({ open, onOpenChange, teacherId, existingData }) => {
                 type="email"
                 value={profileData.email}
                 onChange={handleInputChange}
-                placeholder="example@email.com"
+                placeholder="student@email.com"
                 className="pl-10"
               />
               <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
           </div>
 
+          {/* Phone */}
           <div>
             <Label htmlFor="phone">Phone</Label>
             <div className="relative">
@@ -148,6 +155,7 @@ const EditProfileDialog = ({ open, onOpenChange, teacherId, existingData }) => {
             </div>
           </div>
 
+          {/* Password */}
           <div>
             <Label htmlFor="password">New Password</Label>
             <div className="relative">
@@ -164,12 +172,14 @@ const EditProfileDialog = ({ open, onOpenChange, teacherId, existingData }) => {
             </div>
           </div>
 
+          {/* Error */}
           {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
 
+          {/* Actions */}
           <div className="flex gap-3 pt-2">
             <Button
               type="submit"
-              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold"
+              className="flex-1 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white font-semibold"
             >
               Save Changes
             </Button>
@@ -188,4 +198,4 @@ const EditProfileDialog = ({ open, onOpenChange, teacherId, existingData }) => {
   );
 };
 
-export default EditProfileDialog;
+export default EditStudentDialog;

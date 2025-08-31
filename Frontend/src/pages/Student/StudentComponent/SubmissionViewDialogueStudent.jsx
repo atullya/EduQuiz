@@ -1,17 +1,28 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText, Download } from "lucide-react";
 
-const SubmissionViewDialogueStudent = ({ open, onOpenChange, submission, assignmentTitle }) => {
+const SubmissionViewDialogueStudent = ({
+  open,
+  onOpenChange,
+  submission,
+  assignmentTitle,
+}) => {
   const submissionData = submission || {};
   const submissionText = submissionData.submissionText || "";
   const fileUrl = submissionData.submissionFile || null;
 
-  const getFileName = (url) => url ? url.split("/").pop() : "document.pdf";
-
+  const getFileName = (url) => (url ? url.split("/").pop() : "document.pdf");
+  // console.log("Submission Data:", getFileName);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl max-h-[80vh] flex flex-col">
@@ -43,9 +54,12 @@ const SubmissionViewDialogueStudent = ({ open, onOpenChange, submission, assignm
               </div>
               <div className="p-4 border rounded-md bg-green-50 flex justify-between items-center">
                 <span>📄 {getFileName(fileUrl)}</span>
-                <Button size="sm" onClick={() => window.open(fileUrl, "_blank")}>
+                {/* <Button
+                  size="sm"
+                  onClick={() => window.open(fileUrl, "_blank")}
+                >
                   <Download className="w-3 h-3 mr-1" /> View PDF
-                </Button>
+                </Button> */}
               </div>
             </div>
           )}

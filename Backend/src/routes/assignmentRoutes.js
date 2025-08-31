@@ -103,7 +103,7 @@ assignmentRoutes.get("/my-assigned", authMiddleware, async (req, res) => {
       .populate("class", "name grade section")
       .populate("teacher", "username email");
 
-    res.json(assignments);
+    res.json({ assignments, totalAssignments: assignments.length });
   } catch (err) {
     console.error("Error getting teacher's assignments:", err);
     res.status(500).json({ message: err.message });

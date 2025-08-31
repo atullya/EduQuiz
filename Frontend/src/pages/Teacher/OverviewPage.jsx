@@ -10,9 +10,11 @@ import {
 } from "lucide-react";
 import { apiService } from "../../services/apiServices";
 import { useEffect, useState } from "react";
+import { set } from "mongoose";
 
 const OverviewPage = ({ user, setActiveTab }) => {
   const [classStatus, setClassStatus] = useState("");
+  const [assignmentdata, setAssignmentData] = useState([]);
 
   const fetchTeacherStats = async () => {
     try {
@@ -22,6 +24,19 @@ const OverviewPage = ({ user, setActiveTab }) => {
       console.error("Failed to fetch teacher stats", err.message);
     }
   };
+  const getMyAssignmentsTeacher = async () => {
+    try {
+      const data = await apiService.getMyAssignments();
+      // console.log("Assignments data:", data);
+      setAssignmentData(data);
+    } catch (err) {
+      console.error("Failed to fetch assignments", err.message);
+    }
+  };
+
+  useEffect(() => {
+    getMyAssignmentsTeacher();
+  }, [user?._id, user?.role]);
 
   useEffect(() => {
     if (user?.role === "teacher" && user?._id) {
@@ -67,11 +82,13 @@ const OverviewPage = ({ user, setActiveTab }) => {
           <CardContent className="p-6 text-center">
             <FileText className="w-8 h-8 text-orange-500 mx-auto mb-3" />
             <h3 className="text-lg font-semibold mb-1">Assignments</h3>
-            <p className="text-2xl font-bold text-gray-900">8</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {assignmentdata?.totalAssignments || 0}
+            </p>
             <p className="text-sm text-gray-500">Pending review</p>
           </CardContent>
         </Card>
-
+        {/* 
         <Card>
           <CardContent className="p-6 text-center">
             <BarChart3 className="w-8 h-8 text-purple-500 mx-auto mb-3" />
@@ -79,7 +96,7 @@ const OverviewPage = ({ user, setActiveTab }) => {
             <p className="text-2xl font-bold text-gray-900">94%</p>
             <p className="text-sm text-gray-500">This month</p>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Simple Action Buttons */}
