@@ -4,6 +4,7 @@ import axios from "axios";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { v4 as uuidv4 } from "uuid"; // for batchId
 import MCQ from "../models/MCQ.js";
 // import Classs from "../models/class.model.js"; // Corrected import path based on your provided code
 import User from "../models/user.model.js"; // Corrected import path based on your provided code
@@ -95,42 +96,134 @@ router.get("/test-python", async (req, res) => {
   }
 });
 
-router.post("/save-mcqs", async (req, res) => {
-  const { mcqs, classId, section, teacherId, duration, subject } = req.body;
+// router.post("/save-mcqs", async (req, res) => {
+//   const { mcqs, classId, section, teacherId, duration, subject } = req.body;
 
-  // Validation
+//   // Validation
+//   if (!mcqs || !Array.isArray(mcqs) || mcqs.length === 0) {
+//     return res
+//       .status(400)
+//       .json({ success: false, message: "No MCQs provided." });
+//   }
+//   if (!classId || !section || !teacherId || !subject) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Class, section, subject, and teacher ID are required.",
+//     });
+//   }
+
+//   try {
+//     // Validate class and teacher
+//     const existingClass = await Classs.findById(classId).populate("students");
+//     if (!existingClass) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Selected class not found." });
+//     }
+
+//     const existingTeacher = await User.findById(teacherId);
+//     if (!existingTeacher || existingTeacher.role !== "teacher") {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Teacher not found or invalid role.",
+//       });
+//     }
+
+//     const savedMCQs = [];
+
+//     for (const mcqData of mcqs) {
+//       const transformedOptions = Object.entries(mcqData.options).map(
+//         ([key, value]) => ({ key, value })
+//       );
+
+//       const newMCQ = new MCQ({
+//         question: mcqData.question,
+//         options: transformedOptions,
+//         correct_answer: mcqData.correct_answer,
+//         explanation: mcqData.explanation,
+//         question_type: mcqData.question_type || "Multiple Choice",
+//         class: classId,
+//         section,
+//         subject, // ✅ Subject added here
+//         teacher: teacherId,
+//         duration: duration || 0,
+//         status: "published",
+//       });
+
+//       await newMCQ.save();
+//       savedMCQs.push(newMCQ);
+//     }
+
+//     // ✅ Create notification for students in the class
+//     const studentIds = existingClass.students.map((s) => s._id);
+
+//     const notification = new Notification({
+//       title: `New MCQs in ${subject}`,
+//       message: `Your teacher has added ${savedMCQs.length} new MCQs for class ${existingClass.grade} ${existingClass.section}.`,
+//       type: "mcq",
+//       recipients: studentIds,
+//     });
+
+//     await notification.save();
+
+//     res.status(201).json({
+//       success: true,
+//       message: "MCQs saved successfully!",
+//       savedCount: savedMCQs.length,
+//       notificationId: notification._id,
+//     });
+//   } catch (error) {
+//     console.error("[ERROR IN /save-mcqs]", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to save MCQs to database.",
+//       error: error.message,
+//     });
+//   }
+// });
+router.post("/save-mcqs", async (req, res) => {
+  const { mcqs, classId, section, teacherId, duration, subject, chapter } =
+    req.body;
+
   if (!mcqs || !Array.isArray(mcqs) || mcqs.length === 0) {
     return res
       .status(400)
       .json({ success: false, message: "No MCQs provided." });
   }
-  if (!classId || !section || !teacherId || !subject) {
+  if (!classId || !section || !teacherId || !subject || !chapter) {
     return res.status(400).json({
       success: false,
-      message: "Class, section, subject, and teacher ID are required.",
+      message: "Class, section, subject, chapter, and teacher ID are required.",
     });
   }
 
   try {
-    // Validate class and teacher
     const existingClass = await Classs.findById(classId).populate("students");
-    if (!existingClass) {
+    if (!existingClass)
       return res
         .status(404)
-        .json({ success: false, message: "Selected class not found." });
-    }
+        .json({ success: false, message: "Class not found" });
 
     const existingTeacher = await User.findById(teacherId);
-    if (!existingTeacher || existingTeacher.role !== "teacher") {
-      return res.status(404).json({
-        success: false,
-        message: "Teacher not found or invalid role.",
-      });
-    }
+    if (!existingTeacher || existingTeacher.role !== "teacher")
+      return res
+        .status(404)
+        .json({ success: false, message: "Teacher not found" });
 
+    const batchId = uuidv4(); // unique batch ID for this generation
     const savedMCQs = [];
 
     for (const mcqData of mcqs) {
+      // Avoid duplicate question for same subject + chapter
+      const exists = await MCQ.findOne({
+        question: mcqData.question,
+        subject,
+        chapter,
+        class: classId,
+        section,
+      });
+      if (exists) continue;
+
       const transformedOptions = Object.entries(mcqData.options).map(
         ([key, value]) => ({ key, value })
       );
@@ -143,7 +236,9 @@ router.post("/save-mcqs", async (req, res) => {
         question_type: mcqData.question_type || "Multiple Choice",
         class: classId,
         section,
-        subject, // ✅ Subject added here
+        subject,
+        chapter,
+        batchId,
         teacher: teacherId,
         duration: duration || 0,
         status: "published",
@@ -153,34 +248,32 @@ router.post("/save-mcqs", async (req, res) => {
       savedMCQs.push(newMCQ);
     }
 
-    // ✅ Create notification for students in the class
+    // Notify students
     const studentIds = existingClass.students.map((s) => s._id);
-
-    const notification = new Notification({
-      title: `New MCQs in ${subject}`,
-      message: `Your teacher has added ${savedMCQs.length} new MCQs for class ${existingClass.grade} ${existingClass.section}.`,
-      type: "mcq",
-      recipients: studentIds,
-    });
-
-    await notification.save();
+    if (studentIds.length > 0) {
+      await Notification.create({
+        title: `New MCQs in ${subject} - ${chapter}`,
+        message: `Your teacher added ${savedMCQs.length} new MCQs for class ${existingClass.grade} ${existingClass.section}.`,
+        type: "mcq",
+        recipients: studentIds,
+      });
+    }
 
     res.status(201).json({
       success: true,
-      message: "MCQs saved successfully!",
+      message: "MCQs saved successfully",
       savedCount: savedMCQs.length,
-      notificationId: notification._id,
+      batchId,
     });
   } catch (error) {
-    console.error("[ERROR IN /save-mcqs]", error);
+    console.error("[ERROR] /save-mcqs", error);
     res.status(500).json({
       success: false,
-      message: "Failed to save MCQs to database.",
+      message: "Failed to save MCQs",
       error: error.message,
     });
   }
 });
-
 /*
 router.post("/save-mcqs", async (req, res) => {
   const { mcqs, classId, section, teacherId, duration, subject } = req.body;

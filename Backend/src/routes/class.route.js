@@ -652,13 +652,84 @@ classRoutes.get(
     }
   }
 );
+
+//new one with chapter
+// classRoutes.get(
+//   "/student/classes-with-quizzes/:studentId",
+//   authMiddleware,
+//   async (req, res) => {
+//     const { studentId } = req.params;
+
+//     // Authorization check
+//     if (
+//       req.user.role !== "admin" &&
+//       !(req.user.role === "student" && req.user._id.toString() === studentId)
+//     ) {
+//       return res.status(403).json({ message: "Not authorized" });
+//     }
+
+//     try {
+//       // Find all classes the student is enrolled in
+//       const classes = await Classs.find({ students: studentId })
+//         .populate(
+//           "teacher",
+//           "username email profile.firstName profile.lastName"
+//         )
+//         .populate("students", "_id username email");
+
+//       // For each class, check if MCQs exist
+//       const classesWithQuizInfo = await Promise.all(
+//         classes.map(async (cls) => {
+//           // Find if published MCQs exist for this class, section, subject
+//           const quizCount = await MCQ.countDocuments({
+//             class: cls._id,
+//             section: cls.section,
+//             subject: cls.subjects, // adjust if 'subjects' is an array, pick appropriate
+//             status: "published",
+//           });
+
+//           return {
+//             classId: cls._id,
+//             className: cls.name,
+//             section: cls.section,
+//             grade: cls.grade,
+//             roomNo: cls.roomNo,
+//             subject: cls.subjects,
+//             schedule: cls.schedule,
+//             time: cls.time,
+//             totalStudents: cls.students.length,
+//             teacher: {
+//               id: cls.teacher?._id || null,
+//               name: cls.teacher
+//                 ? `${cls.teacher.profile.firstName} ${cls.teacher.profile.lastName}`
+//                 : "Unknown",
+//               email: cls.teacher?.email || "N/A",
+//             },
+//             hasQuizzes: quizCount > 0,
+//             quizzesCount: quizCount,
+//           };
+//         })
+//       );
+
+//       res.json({
+//         success: true,
+//         totalClasses: classes.length,
+//         enrolledClasses: classesWithQuizInfo,
+//       });
+//     } catch (err) {
+//       console.error("[ERROR] /student/classes-with-quizzes", err);
+//       res.status(500).json({ message: "Internal server error" });
+//     }
+//   }
+// );
+
 classRoutes.get(
   "/student/classes-with-quizzes/:studentId",
   authMiddleware,
   async (req, res) => {
     const { studentId } = req.params;
 
-    // Authorization check
+    // Authorization
     if (
       req.user.role !== "admin" &&
       !(req.user.role === "student" && req.user._id.toString() === studentId)
@@ -667,7 +738,7 @@ classRoutes.get(
     }
 
     try {
-      // Find all classes the student is enrolled in
+      // Find classes student is enrolled in
       const classes = await Classs.find({ students: studentId })
         .populate(
           "teacher",
@@ -675,16 +746,47 @@ classRoutes.get(
         )
         .populate("students", "_id username email");
 
-      // For each class, check if MCQs exist
       const classesWithQuizInfo = await Promise.all(
         classes.map(async (cls) => {
-          // Find if published MCQs exist for this class, section, subject
-          const quizCount = await MCQ.countDocuments({
-            class: cls._id,
-            section: cls.section,
-            subject: cls.subjects, // adjust if 'subjects' is an array, pick appropriate
-            status: "published",
-          });
+          const subjectsArray = Array.isArray(cls.subjects)
+            ? cls.subjects
+            : [cls.subjects];
+
+          const subjectData = await Promise.all(
+            subjectsArray.map(async (subject) => {
+              // Get chapters (fallback to [null] if none)
+              let chapters = await MCQ.distinct("chapter", {
+                class: cls._id,
+                section: cls.section,
+                subject,
+                status: "published",
+              });
+              if (!chapters.length) chapters = [null]; // fallback
+
+              // Count quizzes per chapter
+              const chapterQuizzes = await Promise.all(
+                chapters.map(async (chapter) => {
+                  const count = await MCQ.countDocuments({
+                    class: cls._id,
+                    section: cls.section,
+                    subject,
+                    chapter,
+                    status: "published",
+                  });
+                  return { chapter: chapter || "General", quizCount: count };
+                })
+              );
+
+              return {
+                subject,
+                chapters: chapterQuizzes,
+                totalQuizzes: chapterQuizzes.reduce(
+                  (sum, c) => sum + c.quizCount,
+                  0
+                ),
+              };
+            })
+          );
 
           return {
             classId: cls._id,
@@ -692,7 +794,6 @@ classRoutes.get(
             section: cls.section,
             grade: cls.grade,
             roomNo: cls.roomNo,
-            subject: cls.subjects,
             schedule: cls.schedule,
             time: cls.time,
             totalStudents: cls.students.length,
@@ -703,8 +804,7 @@ classRoutes.get(
                 : "Unknown",
               email: cls.teacher?.email || "N/A",
             },
-            hasQuizzes: quizCount > 0,
-            quizzesCount: quizCount,
+            subjects: subjectData,
           };
         })
       );
@@ -721,13 +821,97 @@ classRoutes.get(
   }
 );
 
+// classRoutes.get(
+//   "/teacher/classes-with-mcqs/:teacherId",
+//   authMiddleware,
+//   async (req, res) => {
+//     const { teacherId } = req.params;
+
+//     // Authorization: only that teacher or admin
+//     if (
+//       req.user.role !== "admin" &&
+//       !(req.user.role === "teacher" && req.user._id.toString() === teacherId)
+//     ) {
+//       return res.status(403).json({ message: "Not authorized" });
+//     }
+
+//     try {
+//       // 1. Find classes where this teacher is assigned
+//       const classes = await Classs.find({ teacher: teacherId });
+
+//       // 2. For each class, find all subjects with MCQs
+//       const subjectData = await Promise.all(
+//         classes.map(async (cls) => {
+//           const subjectsArray = Array.isArray(cls.subjects)
+//             ? cls.subjects
+//             : [cls.subjects];
+
+//           const results = await Promise.all(
+//             subjectsArray.map(async (subject) => {
+//               const publishedCount = await MCQ.countDocuments({
+//                 class: cls._id,
+//                 section: cls.section,
+//                 subject,
+//                 teacher: teacherId,
+//                 status: "published",
+//               });
+
+//               const draftCount = await MCQ.countDocuments({
+//                 class: cls._id,
+//                 section: cls.section,
+//                 subject,
+//                 teacher: teacherId,
+//                 status: "draft",
+//               });
+
+//               const totalCount = publishedCount + draftCount;
+
+//               if (totalCount > 0) {
+//                 return {
+//                   classId: cls._id,
+//                   className: cls.name,
+//                   section: cls.section,
+//                   grade: cls.grade,
+//                   subject,
+//                   quizCount: totalCount,
+//                   statusBreakdown: {
+//                     published: publishedCount,
+//                     draft: draftCount,
+//                   },
+//                 };
+//               } else {
+//                 return null;
+//               }
+//             })
+//           );
+
+//           return results.filter(Boolean); // Remove nulls
+//         })
+//       );
+
+//       const flatResults = subjectData.flat();
+
+//       res.json({
+//         success: true,
+//         totalSubjects: flatResults.length,
+//         subjectsWithMCQs: flatResults,
+//       });
+//     } catch (error) {
+//       console.error("[ERROR] /teacher/classes-with-mcqs", error);
+//       res
+//         .status(500)
+//         .json({ success: false, message: "Internal server error" });
+//     }
+//   }
+// );
+
 classRoutes.get(
   "/teacher/classes-with-mcqs/:teacherId",
   authMiddleware,
   async (req, res) => {
     const { teacherId } = req.params;
 
-    // Authorization: only that teacher or admin
+    // ✅ Authorization: only that teacher or admin
     if (
       req.user.role !== "admin" &&
       !(req.user.role === "teacher" && req.user._id.toString() === teacherId)
@@ -746,46 +930,64 @@ classRoutes.get(
             ? cls.subjects
             : [cls.subjects];
 
+          // 3. For each subject, fetch distinct chapters
           const results = await Promise.all(
             subjectsArray.map(async (subject) => {
-              const publishedCount = await MCQ.countDocuments({
+              const chapters = await MCQ.distinct("chapter", {
                 class: cls._id,
                 section: cls.section,
                 subject,
                 teacher: teacherId,
-                status: "published",
               });
 
-              const draftCount = await MCQ.countDocuments({
-                class: cls._id,
-                section: cls.section,
-                subject,
-                teacher: teacherId,
-                status: "draft",
-              });
+              // 4. For each chapter, count draft + published
+              const chapterResults = await Promise.all(
+                chapters.map(async (chapter) => {
+                  const publishedCount = await MCQ.countDocuments({
+                    class: cls._id,
+                    section: cls.section,
+                    subject,
+                    chapter,
+                    teacher: teacherId,
+                    status: "published",
+                  });
 
-              const totalCount = publishedCount + draftCount;
+                  const draftCount = await MCQ.countDocuments({
+                    class: cls._id,
+                    section: cls.section,
+                    subject,
+                    chapter,
+                    teacher: teacherId,
+                    status: "draft",
+                  });
 
-              if (totalCount > 0) {
-                return {
-                  classId: cls._id,
-                  className: cls.name,
-                  section: cls.section,
-                  grade: cls.grade,
-                  subject,
-                  quizCount: totalCount,
-                  statusBreakdown: {
-                    published: publishedCount,
-                    draft: draftCount,
-                  },
-                };
-              } else {
-                return null;
-              }
+                  const totalCount = publishedCount + draftCount;
+
+                  if (totalCount > 0) {
+                    return {
+                      classId: cls._id,
+                      className: cls.name,
+                      section: cls.section,
+                      grade: cls.grade,
+                      subject,
+                      chapter, // ✅ return chapter directly
+                      quizCount: totalCount,
+                      statusBreakdown: {
+                        published: publishedCount,
+                        draft: draftCount,
+                      },
+                    };
+                  } else {
+                    return null;
+                  }
+                })
+              );
+
+              return chapterResults.filter(Boolean);
             })
           );
 
-          return results.filter(Boolean); // Remove nulls
+          return results.flat().filter(Boolean); // flatten + remove nulls
         })
       );
 
@@ -804,4 +1006,5 @@ classRoutes.get(
     }
   }
 );
+
 export default classRoutes;

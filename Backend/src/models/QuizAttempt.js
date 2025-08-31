@@ -9,6 +9,7 @@ const quizAttemptSchema = new mongoose.Schema({
   class: { type: mongoose.Schema.Types.ObjectId, ref: "Class", required: true },
   section: { type: String, required: true },
   subject: { type: String, required: true },
+  chapter: { type: String, required: true },
   mcqs: [
     {
       mcqId: {

@@ -16,11 +16,16 @@ const mcqSchema = new mongoose.Schema({
 
   // 🔽 New Field: Subject of the question
   subject: { type: String, required: true },
-
+  chapter: { type: String }, // chapter of the MCQ
+  batchId: { type: String }, // optional: track generation batch
   // Class/teacher references
   class: { type: mongoose.Schema.Types.ObjectId, ref: "Class", required: true },
   section: { type: String, required: true },
-  teacher: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  teacher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
 
   duration: { type: Number, default: 0 },
   status: {
