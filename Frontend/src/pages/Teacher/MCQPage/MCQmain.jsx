@@ -68,8 +68,19 @@ const MCQmain = ({ user }) => {
     if (!formData.numberOfQuestions)
       return setError("Please select number of questions"), false;
     if (!formData.platform) return setError("Please select a platform"), false;
-    if (formData.platform === "text" && !formData.textContent.trim())
-      return setError("Please provide text content"), false;
+    // Text content minimum word check
+    if (formData.platform === "text") {
+      const wordCount = formData.textContent.trim().split(/\s+/).length;
+      if (!formData.textContent.trim())
+        return setError("Please provide text content"), false;
+      if (wordCount < 50)
+        return (
+          setError(
+            `Text content is too short. Minimum 50 words required (currently ${wordCount}).`
+          ),
+          false
+        );
+    }
     if (formData.platform === "pdf" && !formData.pdfFile)
       return setError("Please upload a PDF file"), false;
     if (
