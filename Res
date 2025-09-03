@@ -1,0 +1,47 @@
+# Required libraries
+from rouge_score import rouge_scorer
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
+from sklearn.metrics import f1_score
+
+# 1. Sample text input
+text = """
+Photosynthesis is the process by which green plants and some other organisms use sunlight 
+to synthesize foods from carbon dioxide and water. Isaac Newton discovered the laws of motion 
+and gravity, which laid the foundation for classical mechanics.
+"""
+
+# 2. Generate MCQs using your function
+mcqs = generate_mcqs_from_text(text, desired_mcq_count=2)
+
+# 3. Reference questions (teacher-made)
+reference_questions = [
+    "What is Photosynthesis?",
+    "Who discovered the laws of motion and gravity?"
+]
+
+# 4. ROUGE-L Calculation
+scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+for i, mcq in enumerate(mcqs):
+    score = scorer.score(reference_questions[i], mcq["question"])
+    print(f"Generated Question: {mcq['question']}")
+    print(f"Reference Question: {reference_questions[i]}")
+    print(f"ROUGE-L F1 Score: {score['rougeL'].fmeasure:.2f}")
+    print("Options:", mcq["options"])
+    print("Correct Answer:", mcq["answer"])
+    print("-" * 50)
+
+# 5. BLEU Score Calculation
+smooth = SmoothingFunction().method1
+for i, mcq in enumerate(mcqs):
+    reference = [ref.split() for ref in [reference_questions[i]]]
+    candidate = mcq["question"].split()
+    bleu = sentence_bleu(reference, candidate, smoothing_function=smooth)
+    print(f"BLEU Score: {bleu:.2f}")
+
+# 6. F1 Score Example (Answer match)
+# Here, using MCQ's correct answer as both true and predicted (example)
+true_answers = [mcq["answer"] for mcq in mcqs]
+predicted_answers = [mcq["answer"] for mcq in mcqs]  # assume perfect answer prediction
+# For strings, F1 requires binary or categorical mapping, so simplified example:
+f1 = 1.0 if true_answers == predicted_answers else 0.0
+print("F1 Score (Answer Match Example):", f1)
